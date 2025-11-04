@@ -36,7 +36,7 @@ int main(int argc, char* argv[])
     }
 
     ZED::IWindow* window = createWindow();
-    if (!window->Init("ZED Test Window", 800, 600))
+    if (!window->Init("ZED-APP: Sandbox", 800, 600))
     {
         std::cerr << "Failed to init window\n";
         return -1;

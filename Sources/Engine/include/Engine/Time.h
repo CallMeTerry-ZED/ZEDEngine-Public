@@ -9,7 +9,7 @@
 
 namespace ZED
 {
-    class Time
+    class ZEDENGINE_API Time
     {
     public:
         static void Sleep(unsigned int milliseconds);

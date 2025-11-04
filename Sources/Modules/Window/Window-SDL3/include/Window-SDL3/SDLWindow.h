@@ -14,7 +14,7 @@
 
 namespace ZED
 {
-    class SDLWindow : public IWindow
+    class ZEDENGINE_API SDLWindow : public IWindow
     {
     public:
         bool Init(const char* title, int width, int height) override;

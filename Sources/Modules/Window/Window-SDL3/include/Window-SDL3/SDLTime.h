@@ -12,7 +12,7 @@
 
 namespace ZED
 {
-    class SDLTime : public ITime
+    class ZEDENGINE_API SDLTime : public ITime
     {
     public:
         void Sleep(unsigned int milliseconds) override;

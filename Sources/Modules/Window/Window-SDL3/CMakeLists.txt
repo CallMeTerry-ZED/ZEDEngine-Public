@@ -31,4 +31,5 @@ target_link_libraries(Window-SDL3 PRIVATE
 
 target_compile_definitions(Window-SDL3 PRIVATE
         "ZEDENGINE_API=__declspec(dllexport)"
+        ZEDENGINE_EXPORTS
 )

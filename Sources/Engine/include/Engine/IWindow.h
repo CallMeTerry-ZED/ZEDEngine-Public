@@ -9,7 +9,7 @@
 
 namespace ZED
 {
-    class IWindow
+    class ZEDENGINE_API IWindow
     {
     public:
         virtual bool Init(const char* title, int width, int height) = 0;

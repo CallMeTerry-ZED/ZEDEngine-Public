@@ -9,7 +9,7 @@
 
 namespace ZED
 {
-    class ITime
+    class ZEDENGINE_API ITime
     {
     public:
         virtual ~ITime() = default;
@@ -18,7 +18,7 @@ namespace ZED
 
     // Global accessor (like singleton-style access)
     extern ITime* g_timeImpl;
-    void SetTimeImplementation(ITime* impl);
+    ZEDENGINE_API void SetTimeImplementation(ITime* impl);
     ITime* GetTimeImplementation();
 }
 

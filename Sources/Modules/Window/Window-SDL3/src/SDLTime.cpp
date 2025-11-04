@@ -10,7 +10,7 @@ namespace ZED
     void SDLTime::Sleep(unsigned int milliseconds)
     {
         SDL_Delay(milliseconds);
-        std::cout << "[ZED::SDLTime] Sleep called\n";
+        //std::cout << "[ZED::SDLTime] Sleep called\n";
     }
 
     extern "C" ZEDENGINE_API void RegisterTime()

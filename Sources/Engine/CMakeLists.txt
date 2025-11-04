@@ -13,7 +13,7 @@ file(GLOB_RECURSE ENGINE_INC CONFIGURE_DEPENDS
         ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
 )
 
-add_library(Engine STATIC
+add_library(Engine SHARED
         ${ENGINE_SRC}
         ${ENGINE_INC}
 )
@@ -29,4 +29,5 @@ target_link_libraries(Engine PRIVATE
 
 target_compile_definitions(Engine PRIVATE
         "ZEDENGINE_API=__declspec(dllexport)"
+        ZEDENGINE_EXPORTS
 )

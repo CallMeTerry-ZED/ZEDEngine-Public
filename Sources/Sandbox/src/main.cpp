@@ -5,6 +5,7 @@
 #include "Engine/IWindow.h"
 #include "Engine/Time.h"
 #include "Engine/Config/Config.h"
+#include "Engine/Module/ModuleLoader.h"
 
 #include <Windows.h>
 #include <iostream>
@@ -14,67 +15,47 @@ typedef void (*RegisterTimeFunc)();
 
 int main(int argc, char* argv[])
 {
-    // Load INI config
+    // Load INI configuration
     ZED::Config::Load("Configs/zedengine.ini");
 
-    const auto& ini = ZED::Config::Get();
-    std::string windowModuleName = ini.GetValue("Modules", "Window", "libWindow-SDL3.dll");
-    std::string timeModuleName = ini.GetValue("Modules", "Time", "libWindow-SDL3.dll");
+    // Load all modules listed in the INI under [Modules]
+    ZED::Module::ModuleLoader::LoadModulesFromINI();
 
-    std::cout << "Configured window module: " << windowModuleName << "\n";
-    std::cout << "Configured time module: " << timeModuleName << "\n";
-
-    // Load time module and register it
-    HMODULE timeModule = LoadLibraryA(timeModuleName.c_str());
-    if (!timeModule)
-    {
-        std::cerr << "Failed to load time module: " << timeModuleName << "\n";
-        return -1;
-    }
-
-    RegisterTimeFunc registerTime = (RegisterTimeFunc)GetProcAddress(timeModule, "RegisterTime");
+    // Call the 'RegisterTime' function from the module specified for Time
+    auto registerTime = (RegisterTimeFunc)
+    ZED::Module::ModuleLoader::GetFunction("Time", "RegisterTime");
     if (registerTime)
     {
         registerTime();
     }
-    else
-    {
-        std::cerr << "RegisterTime not found in: " << timeModuleName << "\n";
-    }
 
-    // Load window module and create window
-    HMODULE windowModule = LoadLibraryA(windowModuleName.c_str());
-    if (!windowModule)
-    {
-        std::cerr << "Failed to load window module: " << windowModuleName << "\n";
-        return -1;
-    }
-
-    auto createWindow = (CreateWindowFunc)GetProcAddress(windowModule, "CreateWindow");
+    // Create a window via the Window module
+    auto createWindow = (CreateWindowFunc)
+    ZED::Module::ModuleLoader::GetFunction("Window", "CreateWindow");
     if (!createWindow)
     {
-        std::cerr << "CreateWindow not found in: " << windowModuleName << "\n";
+        std::cerr << "[ZED::Main] CreateWindow not found\n";
         return -1;
     }
 
     ZED::IWindow* window = createWindow();
     if (!window->Init("ZED-APP: Sandbox", 800, 600))
     {
-        std::cerr << "Failed to init window\n";
+        std::cerr << "[ZED::Main] Failed to init window\n";
         return -1;
     }
 
+    // Main loop
     while (window->IsRunning())
     {
         window->PollEvents();
         ZED::Time::Sleep(16);
     }
 
-    // Cleanup
     window->Shutdown();
     delete window;
-    FreeLibrary(timeModule);
-    FreeLibrary(windowModule);
+    // Optional: unload modules (ModuleLoader tracks modules and can free them)
+    ZED::Module::ModuleLoader::Cleanup();
 
     return 0;
 }

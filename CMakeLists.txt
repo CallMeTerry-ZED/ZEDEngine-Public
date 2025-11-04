@@ -32,6 +32,10 @@ set(SDL_TESTS OFF CACHE BOOL "Disable SDL tests")
 log("Adding SDL3...")
 add_subdirectory(Thirdparty/sdl3)
 
+log("Adding SimpleIni...")
+set(SIMPLEINI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/simpleini)
+include_directories(${SIMPLEINI_DIR})
+
 log("Thirdparty Libraries Configured.")
 
 # -------- Engine & Modules --------

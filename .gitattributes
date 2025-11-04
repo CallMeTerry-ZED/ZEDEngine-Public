@@ -1,0 +1,27 @@
+# Treat all source files as text
+*.cpp text
+*.h text
+*.hpp text
+*.c text
+*.cs text
+*.glsl text
+*.vert text
+*.frag text
+*.cmake text
+CMakeLists.txt text
+
+# Auto normalize line endings
+* text=auto
+
+# Binary files
+*.png binary
+*.jpg binary
+*.fbx binary
+*.ogg binary
+*.wav binary
+*.dll binary
+*.exe binary
+*.so binary
+
+# GitHub linguist ignore Thirdparty
+Thirdparty/** linguist-vendored

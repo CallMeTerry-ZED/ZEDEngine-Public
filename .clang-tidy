@@ -1,0 +1,32 @@
+Checks: >
+  clang-analyzer-*
+  ,bugprone-*
+  ,modernize-*
+  ,performance-*
+  ,readability-*
+  ,misc-*
+  ,portability-*
+  ,cppcoreguidelines-*
+  ,google-*
+  ,-google-readability-casting
+  ,-google-runtime-references
+  ,-modernize-use-trailing-return-type
+  ,-cppcoreguidelines-pro-bounds-array-to-pointer-decay
+  ,-cppcoreguidelines-pro-type-union-access
+  ,-cppcoreguidelines-avoid-magic-numbers
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '.*'
+
+FormatStyle: file
+
+CheckOptions:
+  - key:             modernize-use-nullptr.NullMacros
+    value:           'NULL'
+  - key:             modernize-use-nullptr.NullptrTMacros
+    value:           'nullptr_t'
+  - key:             modernize-use-trailing-return-type.MinTypeChars
+    value:           '10'
+  - key:             readability-magic-numbers.IgnoredValues
+    value:           '0,1,2,-1'

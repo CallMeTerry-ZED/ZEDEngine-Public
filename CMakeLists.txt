@@ -24,11 +24,10 @@ endmacro()
 # -------- Thirdparty Config --------
 log("Configuring Thirdparty Libraries...")
 
-# SDL3 static config
+# SDL3 config
 set(SDL_SHARED ON CACHE BOOL "Build SDL as a shared library")
 set(SDL_STATIC OFF CACHE BOOL "Build SDL as a static library")
 set(SDL_TESTS OFF CACHE BOOL "Disable SDL tests")
-
 log("Adding SDL3...")
 add_subdirectory(Thirdparty/sdl3)
 
@@ -36,14 +35,30 @@ log("Adding SimpleIni...")
 set(SIMPLEINI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/simpleini)
 include_directories(${SIMPLEINI_DIR})
 
+# Jolt Physics Config
+set(JPH_BUILD_SHARED_LIBS ON CACHE BOOL "Compile Jolt as a shared library")
+set(JPH_SHARED_LIBRARY ON CACHE BOOL "Sets Jolt as a shared library")
+set(JPH_DEBUG_RENDERER ON CACHE BOOL "Adds support to draw lines and triangles")
+set(JPH_CROSS_PLATFORM_DETERMINISTIC ON CACHE BOOL "Turns on behavior to attempt cross platform determinism")
+set(JPH_DET_LOG ON CACHE BOOL "Turns on a lot of extra logging to help debug determinism issues when JPH_CROSS_PLATFORM_DETERMINISTIC is turned on")
+set(CPP_RTTI_ENABLED ON CACHE BOOL "Enables RTTI inside Jolt to avoid typeinfo link errors")
+log("Adding Jolt Physics...")
+add_subdirectory(Thirdparty/jolt/Build)
+
+log("Adding GLFW...")
+add_subdirectory(Thirdparty/glfw)
+
 log("Thirdparty Libraries Configured.")
 
 # -------- Engine & Modules --------
 log("Adding Engine...")
 add_subdirectory(Sources/Engine)
 
-log("Adding Window Module (SDL3)...")
+log("Adding Window Module: SDL3...")
 add_subdirectory(Sources/Modules/Window/Window-SDL3)
+
+log("Adding Window Module: GLFW...")
+add_subdirectory(Sources/Modules/Window/Window-GLFW)
 
 # -------- Executables / Applications --------
 log("Adding Sandbox Application...")

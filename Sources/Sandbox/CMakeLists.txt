@@ -21,11 +21,13 @@ add_executable(Sandbox
 target_include_directories(Sandbox PUBLIC
         ${SOURCES_DIR}/Engine/include
         ${SOURCES_DIR}/Modules/Window/Window-SDL3/include
+        ${SOURCES_DIR}/Modules/Window/Window-GLFW/include
         ${THIRDPARTY_DIR}/sdl3/include
 )
 
 target_link_libraries(Sandbox PRIVATE
         Engine
+        Window-GLFW
         Window-SDL3
 )
 

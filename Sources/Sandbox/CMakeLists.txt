@@ -29,12 +29,20 @@ target_link_libraries(Sandbox PRIVATE
         Window-SDL3
 )
 
+target_compile_definitions(Sandbox PRIVATE
+        "ZEDENGINE_API=__declspec(dllimport)"
+)
+
 add_custom_command(TARGET Sandbox POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:SDL3::SDL3-shared>
         $<TARGET_FILE_DIR:Sandbox>
 )
 
-target_compile_definitions(Sandbox PRIVATE
-        "ZEDENGINE_API=__declspec(dllimport)"
+add_custom_command(TARGET Sandbox POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory
+        $<TARGET_FILE_DIR:Sandbox>/Configs
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/Sources/Configs/zedengine.ini
+        $<TARGET_FILE_DIR:Sandbox>/Configs/zedengine.ini
 )

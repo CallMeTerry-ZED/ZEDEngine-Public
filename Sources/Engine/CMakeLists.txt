@@ -21,6 +21,7 @@ add_library(Engine SHARED
 target_include_directories(Engine PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include
         ${THIRDPARTY_DIR}/sdl3/include
+        ${SIMPLEINI_DIR}
 )
 
 target_link_libraries(Engine PRIVATE

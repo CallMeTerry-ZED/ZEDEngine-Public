@@ -12,7 +12,7 @@ namespace ZED::Module
 {
     void ModuleLoader::LoadModulesFromINI(const std::string& section)
     {
-        const auto& ini = ZED::Config::Get();
+        const auto& ini = Config::Get();
 
         CSimpleIniA::TNamesDepend keys;
         ini.GetAllKeys(section.c_str(), keys);

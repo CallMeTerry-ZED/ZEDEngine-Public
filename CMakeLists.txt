@@ -54,11 +54,22 @@ log("Thirdparty Libraries Configured.")
 log("Adding Engine...")
 add_subdirectory(Sources/Engine)
 
+log("Setting up Window Modules...")
+
 log("Adding Window Module: SDL3...")
 add_subdirectory(Sources/Modules/Window/Window-SDL3)
 
 log("Adding Window Module: GLFW...")
 add_subdirectory(Sources/Modules/Window/Window-GLFW)
+
+log("Window Modules Setup Complete!")
+
+log("Setting up Input Modules...")
+
+log("Adding Input Module: SDL3...")
+add_subdirectory(Sources/Modules/Input/Input-SDL3)
+
+log("Input Modules Setup Complete!")
 
 # -------- Executables / Applications --------
 log("Adding Sandbox Application...")

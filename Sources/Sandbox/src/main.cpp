@@ -4,6 +4,7 @@
 
 #include "Engine/IWindow.h"
 #include "Engine/Time.h"
+#include "Engine/Input/Input.h"
 #include "Engine/Config/Config.h"
 #include "Engine/Module/ModuleLoader.h"
 
@@ -12,6 +13,7 @@
 
 typedef ZED::IWindow* (*CreateWindowFunc)();
 typedef void (*RegisterTimeFunc)();
+typedef void (*RegisterInputFunc)();
 
 int main(int argc, char* argv[])
 {
@@ -21,17 +23,25 @@ int main(int argc, char* argv[])
     // Load all modules listed in the INI under [Modules]
     ZED::Module::ModuleLoader::LoadModulesFromINI();
 
-    // Call the 'RegisterTime' function from the module specified for Time
+    // Register SDLTime implementation
     auto registerTime = (RegisterTimeFunc)
-    ZED::Module::ModuleLoader::GetFunction("Time", "RegisterTime");
+        ZED::Module::ModuleLoader::GetFunction("Time", "RegisterTime");
     if (registerTime)
     {
         registerTime();
     }
 
+    // Register SDLInput implementation
+    auto registerInput = (RegisterInputFunc)
+        ZED::Module::ModuleLoader::GetFunction("Input", "RegisterInput");
+    if (registerInput)
+    {
+        registerInput();
+    }
+
     // Create a window via the Window module
     auto createWindow = (CreateWindowFunc)
-    ZED::Module::ModuleLoader::GetFunction("Window", "CreateWindow");
+        ZED::Module::ModuleLoader::GetFunction("Window", "CreateWindow");
     if (!createWindow)
     {
         std::cerr << "[ZED::Main] CreateWindow not found\n";
@@ -54,7 +64,8 @@ int main(int argc, char* argv[])
 
     window->Shutdown();
     delete window;
-    // Optional: unload modules (ModuleLoader tracks modules and can free them)
+
+    // Cleanup loaded modules
     ZED::Module::ModuleLoader::Cleanup();
 
     return 0;

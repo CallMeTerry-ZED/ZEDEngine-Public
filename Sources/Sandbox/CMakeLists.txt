@@ -22,6 +22,7 @@ target_include_directories(Sandbox PUBLIC
         ${SOURCES_DIR}/Engine/include
         ${SOURCES_DIR}/Modules/Window/Window-SDL3/include
         ${SOURCES_DIR}/Modules/Window/Window-GLFW/include
+        ${SOURCES_DIR}/Modules/Input/Input-SDL3/include
         ${THIRDPARTY_DIR}/sdl3/include
 )
 
@@ -29,18 +30,21 @@ target_link_libraries(Sandbox PRIVATE
         Engine
         Window-GLFW
         Window-SDL3
+        Input-SDL3
 )
 
 target_compile_definitions(Sandbox PRIVATE
         "ZEDENGINE_API=__declspec(dllimport)"
 )
 
+# Copy sdl dll to output dir (where the exe is)
 add_custom_command(TARGET Sandbox POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:SDL3::SDL3-shared>
         $<TARGET_FILE_DIR:Sandbox>
 )
 
+# Copy config file *ini* to output dir (where the exe is)
 add_custom_command(TARGET Sandbox POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory
         $<TARGET_FILE_DIR:Sandbox>/Configs

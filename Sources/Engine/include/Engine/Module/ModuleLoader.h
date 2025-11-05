@@ -13,6 +13,7 @@
 
 namespace ZED::Module
 {
+    // A class that allows you to easily load engine modules and their functions
     class ZEDENGINE_API ModuleLoader
     {
     public:

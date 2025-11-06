@@ -8,6 +8,7 @@
 #pragma once
 #include "SDL3/SDL.h"
 #include "Engine/Interfaces/Input/IInput.h"
+#include <unordered_map>
 
 namespace ZED
 {
@@ -15,12 +16,18 @@ namespace ZED
     {
     public:
         SDLInput();
+        ~SDLInput() override;
+
+        bool Init() override;
         void PollEvents() override;
-        void SetEventCallback(void (*callback)(const InputEvent&)) override;
+        void SetEventCallback(const std::function<void(const InputEvent&)>& callback) override;
+        //void Update() override;
+        bool IsKeyDown(Key key) const override;
 
     private:
-        void (*eventCallback)(const InputEvent&) = nullptr;
-        ZED::Key MapSDLKey(SDL_Keycode keycode);
+        std::function<void(const InputEvent&)> eventCallback;
+        Key TranslateKey(SDL_Keycode keycode);
+        std::unordered_map<Key, bool> mKeyState;
     };
 }
 

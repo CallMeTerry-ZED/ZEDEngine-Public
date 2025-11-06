@@ -9,5 +9,6 @@
 extern "C" ZEDENGINE_API void RegisterInput()
 {
     static ZED::SDLInput input;
-    ZED::SetInputImplementation(&input);
+    input.Init();
+    ZED::Input::SetInputImplementation(&input);
 }

@@ -7,6 +7,8 @@
 
 #pragma once
 
+#include <functional>
+
 namespace ZED
 {
     enum class Key
@@ -173,7 +175,12 @@ namespace ZED
     public:
         virtual ~IInput() = default;
         virtual void PollEvents() = 0;
-        virtual void SetEventCallback(void (*callback)(const InputEvent&)) = 0;
+        // Called once per frame to process OS events
+        //virtual void Update() = 0;
+        // Query whether a key is currently pressed
+        virtual bool IsKeyDown(Key key) const = 0;
+        virtual void SetEventCallback(const std::function<void(const InputEvent&)>& callback) = 0;
+        virtual bool Init() = 0;
     };
 }
 

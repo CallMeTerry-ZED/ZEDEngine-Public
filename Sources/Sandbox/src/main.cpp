@@ -55,10 +55,37 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    ZED::Input::GetInput()->SetEventCallback([](const ZED::InputEvent& e)
+    {
+        switch (e.type)
+        {
+            case ZED::InputEventType::KeyDown:
+                std::cout << "Key Down: " << static_cast<int>(e.key) << "\n";
+                break;
+            case ZED::InputEventType::KeyUp:
+                std::cout << "Key Up: " << static_cast<int>(e.key) << "\n";
+                break;
+            case ZED::InputEventType::MouseMove:
+                std::cout << "Mouse Move: (" << e.mouseX << ", " << e.mouseY << ")\n";
+                break;
+        }
+    });
+
     // Main loop
     while (window->IsRunning())
     {
+        // Poll input events first.  SDL queues are global, so if the window
+        // consumes events before the input system sees them, keyboard and mouse
+        // callbacks will be missed.  Calling the input poller first ensures
+        // that input events are processed before the window drains the queue.
+        ZED::Input::GetInput()->PollEvents();
         window->PollEvents();
+
+        if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::W))
+        {
+            std::cout << "[Continuous] W is held down\n";
+        }
+
         ZED::Time::Sleep(16);
     }
 

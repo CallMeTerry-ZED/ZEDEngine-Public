@@ -10,7 +10,7 @@ namespace ZED
 
     bool SDLWindow::Init(const char* title, int width, int height)
     {
-        if (!SDL_Init(SDL_INIT_VIDEO || SDL_INIT_EVENTS))
+        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
         {
             std::cerr << "SDL_Init Error: " << SDL_GetError() << "\n";
             return false;

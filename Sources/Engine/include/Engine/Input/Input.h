@@ -11,8 +11,20 @@
 
 namespace ZED
 {
-    ZEDENGINE_API void SetInputImplementation(IInput* impl);
-    ZEDENGINE_API IInput* GetInput();
+    class ZEDENGINE_API Input : public IInput
+    {
+    public:
+        // Global accessor and setter *prolly want to set this up better
+        static void SetInputImplementation(IInput* impl);
+        static IInput* GetInput();
+
+        //void Update() override;
+        bool IsKeyDown(Key key) const override;
+
+    private:
+        // Holds the current IInput implementation
+        static IInput* s_InputImpl;
+    };
 }
 
 #endif

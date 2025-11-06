@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 
     // Create a window via the Window module
     auto createWindow = (CreateWindowFunc)
-        ZED::Module::ModuleLoader::GetFunction("Window", "CreateWindow");
+        ZED::Module::ModuleLoader::GetFunction("Window", "ZED_CreateWindow");
     if (!createWindow)
     {
         std::cerr << "[ZED::Main] CreateWindow not found\n";
@@ -56,8 +56,15 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    // After RegisterInput(), get the input instance
+    auto* input = ZED::Input::GetInput();
+
+    // Needed so we can use other modules than sdl for windowing
+    // But still be able to use sdl for our input
+    input->AttachToNativeWindow(window->GetNativeHandle());
+
     // Set up input event callback
-    ZED::Input::GetInput()->SetEventCallback([](const ZED::InputEvent& e)
+    input->SetEventCallback([](const ZED::InputEvent& e)
     {
         // logging of input events *just to ensure it works
         switch (e.type) {

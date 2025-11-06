@@ -5,7 +5,7 @@
 #include "Window-SDL3/SDLWindow.h"
 #include "Engine/IWindow.h"
 
-extern "C" ZEDENGINE_API ZED::IWindow* CreateWindow()
+extern "C" ZEDENGINE_API ZED::IWindow* ZED_CreateWindow()
 {
     return new ZED::SDLWindow();
 }

@@ -19,6 +19,7 @@ namespace ZED
         void PollEvents() override;
         void Shutdown() override;
         bool IsRunning() const override;
+        void* GetNativeHandle() const override;
 
     private:
         GLFWwindow* m_Window = nullptr;

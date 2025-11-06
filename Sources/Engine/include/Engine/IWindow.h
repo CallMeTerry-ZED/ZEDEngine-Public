@@ -16,6 +16,7 @@ namespace ZED
         virtual void PollEvents() = 0;
         virtual void Shutdown() = 0;
         virtual bool IsRunning() const = 0;
+        virtual void* GetNativeHandle() const = 0;
         virtual ~IWindow() = default;
     };
 }

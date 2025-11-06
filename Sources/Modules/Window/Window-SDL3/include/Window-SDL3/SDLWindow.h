@@ -21,6 +21,7 @@ namespace ZED
         void PollEvents() override;
         void Shutdown() override;
         bool IsRunning() const override;
+        void* GetNativeHandle() const override;
 
     private:
         SDL_Window* m_Window = nullptr;

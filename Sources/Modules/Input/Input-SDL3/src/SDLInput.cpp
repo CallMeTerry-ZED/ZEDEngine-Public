@@ -15,7 +15,7 @@ namespace ZED
 
     bool SDLInput::Init()
     {
-        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS))
+        if (!SDL_Init(SDL_INIT_VIDEO |SDL_INIT_GAMEPAD | SDL_INIT_EVENTS))
         {
             std::cerr << "SDL_Init Error: " << SDL_GetError() << "\n";
             return false;
@@ -47,7 +47,47 @@ namespace ZED
         }
         SDL_free(ids);
 
+        //std::cout << "[SDLInput] Initialized (VIDEO+GAMEPAD+EVENTS)\n";
         return true;
+    }
+
+    void SDLInput::AttachToNativeWindow(void* native_handle)
+    {
+        if (mSDLWindow || !native_handle) return;
+
+        SDL_PropertiesID props = SDL_CreateProperties();
+        if (!props)
+        {
+            std::cerr << "[SDLInput] SDL_CreateProperties failed: " << SDL_GetError() << "\n";
+            return;
+        }
+
+        #if defined(_WIN32)
+            SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WIN32_HWND_POINTER, native_handle);
+        #elif defined(__APPLE__)
+            // Wrap an existing NSWindow*
+            SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_COCOA_WINDOW_POINTER, native_handle);
+        #elif defined(__linux__)
+            // If you’re using X11:
+            // native_handle is an ::Window (integer). Cast to uintptr_t for the NUMBER property.
+            SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X11_WINDOW_NUMBER, (Sint64)(uintptr_t)native_handle);
+            // If you’re on Wayland and have wl_surface*, use:
+            // SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_WL_SURFACE_POINTER, native_handle);
+        #endif
+
+        // Make sure the window is focusable so k/m input is routed here.
+        SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FOCUSABLE_BOOLEAN, true);
+
+        // Don’t let SDL implicitly create or show anything else:
+        // (Not strictly required, but explicit is nice.)
+        // SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, false);
+
+        mSDLWindow = SDL_CreateWindowWithProperties(props);
+        SDL_DestroyProperties(props);
+
+        if (!mSDLWindow) {
+            std::cerr << "[SDLInput] SDL_CreateWindowWithProperties failed: " << SDL_GetError() << "\n";
+        }
     }
 
     void SDLInput::SetEventCallback(const std::function<void(const InputEvent&)>& callback)
@@ -103,20 +143,21 @@ namespace ZED
         {
             InputEvent ie{};
             ie.type   = InputEventType::MouseMove;
-            ie.mouseX = mouseX;
-            ie.mouseY = mouseY;
+            ie.mouseX = static_cast<int>(mouseX);
+            ie.mouseY = static_cast<int>(mouseY);
             if (eventCallback) eventCallback(ie);
 
             Event ev{};
             ev.type = EventType::MouseMove;
-            ev.c    = mouseX;
-            ev.d    = mouseY;
+            ev.c    = static_cast<int>(mouseX);
+            ev.d    = static_cast<int>(mouseY);
             EventSystem::Get().PostDeferred(ev);
 
             mPrevMouseX = mouseX;
             mPrevMouseY = mouseY;
         }
 
+        // Buttons
         static const struct {
             Uint32 mask; Key key; EventType downType; EventType upType;
         } buttonMap[] = {

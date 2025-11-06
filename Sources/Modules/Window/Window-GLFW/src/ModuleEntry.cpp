@@ -5,7 +5,7 @@
 #include "Window-GLFW/GLFWWindow.h"
 #include "Engine/IWindow.h"
 
-extern "C" ZEDENGINE_API ZED::IWindow* CreateWindow()
+extern "C" ZEDENGINE_API ZED::IWindow* ZED_CreateWindow()
 {
     return new ZED::GLFWWindow();
 }

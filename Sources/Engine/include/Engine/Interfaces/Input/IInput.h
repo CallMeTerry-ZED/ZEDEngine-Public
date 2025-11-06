@@ -179,6 +179,7 @@ namespace ZED
         virtual bool IsKeyDown(Key key) const = 0;
         virtual void SetEventCallback(const std::function<void(const InputEvent&)>& callback) = 0;
         virtual bool Init() = 0;
+        virtual void AttachToNativeWindow(void* native_handle) = 0;
     };
 }
 

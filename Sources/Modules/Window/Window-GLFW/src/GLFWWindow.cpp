@@ -5,6 +5,15 @@
 #include "Window-GLFW/GLFWWindow.h"
 #include "Engine/Events/EventSystem.h"
 #include <iostream>
+#ifdef _WIN32
+    #define GLFW_EXPOSE_NATIVE_WIN32
+#elif defined(__APPLE__)
+    #define GLFW_EXPOSE_NATIVE_COCOA
+#else
+    #define GLFW_EXPOSE_NATIVE_X11    // or WAYLAND if you’re using that
+#endif
+#include <GLFW/glfw3.h>
+#include <GLFW/glfw3native.h>
 
 namespace ZED
 {
@@ -38,28 +47,28 @@ namespace ZED
             // Mark it no longer running
             self->m_running = false;
             // Post a WindowClose event
-            ZED::Event ev{};
-            ev.type = ZED::EventType::WindowClose;
-            ZED::EventSystem::Get().Post(ev);
+            Event ev{};
+            ev.type = EventType::WindowClose;
+            EventSystem::Get().Post(ev);
         });
 
         // Window resize callback
         glfwSetWindowSizeCallback(m_Window, [](GLFWwindow*, int w, int h)
         {
-            ZED::Event ev{};
-            ev.type = ZED::EventType::WindowResized;
+            Event ev{};
+            ev.type = EventType::WindowResized;
             ev.a = w;
             ev.b = h;
-            ZED::EventSystem::Get().Post(ev);
+            EventSystem::Get().Post(ev);
         });
 
         // Window focus callback (0 = lost, 1 = gained)
         glfwSetWindowFocusCallback(m_Window, [](GLFWwindow*, int focused)
         {
-            ZED::Event ev{};
-            ev.type = focused ? ZED::EventType::WindowFocusGained
-                              : ZED::EventType::WindowFocusLost;
-            ZED::EventSystem::Get().Post(ev);
+            Event ev{};
+            ev.type = focused ? EventType::WindowFocusGained
+                              : EventType::WindowFocusLost;
+            EventSystem::Get().Post(ev);
         });
 
         return true;
@@ -74,9 +83,9 @@ namespace ZED
         if (glfwWindowShouldClose(m_Window))
         {
             m_running = false;
-            ZED::Event ev{};
-            ev.type = ZED::EventType::WindowClose;
-            ZED::EventSystem::Get().Post(ev);
+            Event ev{};
+            ev.type = EventType::WindowClose;
+            EventSystem::Get().Post(ev);
         }
     }
 
@@ -89,5 +98,16 @@ namespace ZED
     bool GLFWWindow::IsRunning() const
     {
         return m_running;
+    }
+
+    void* GLFWWindow::GetNativeHandle() const
+    {
+        #ifdef _WIN32
+            return (void*)glfwGetWin32Window(m_Window);
+        #elif defined(__APPLE__)
+            return (void*)glfwGetCocoaWindow(m_Window);
+        #else
+            return (void*)glfwGetX11Window(m_Window);
+        #endif
     }
 }

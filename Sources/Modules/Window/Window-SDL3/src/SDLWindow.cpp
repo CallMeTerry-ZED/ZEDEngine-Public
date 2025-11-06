@@ -25,6 +25,27 @@ namespace ZED
         return true;
     }
 
+    void* SDLWindow::GetNativeHandle() const
+    {
+        if (!m_Window)
+            return nullptr;
+
+        SDL_PropertiesID props = SDL_GetWindowProperties(m_Window);
+        if (!props)
+            return nullptr;
+
+        #if defined(_WIN32)
+                return SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+        #elif defined(__APPLE__)
+                return SDL_GetPointerProperty(props, SDL_PROP_WINDOW_COCOA_WINDOW_POINTER, nullptr);
+        #elif defined(__linux__)
+                // X11: returns Window (integer)
+                return (void*)(uintptr_t)SDL_GetNumberProperty(props, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0);
+        #else
+                return nullptr;
+        #endif
+    }
+
     void SDLWindow::PollEvents()
     {
         SDL_Event e{};

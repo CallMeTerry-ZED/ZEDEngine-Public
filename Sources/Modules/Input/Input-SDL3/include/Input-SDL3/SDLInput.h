@@ -7,6 +7,7 @@
 
 #pragma once
 #include "SDL3/SDL.h"
+#include "SDL3/SDL_video.h"
 #include "Engine/Interfaces/Input/IInput.h"
 #include <vector>
 #include <unordered_map>
@@ -28,8 +29,11 @@ namespace ZED
         void PollEvents() override;
         void SetEventCallback(const std::function<void(const InputEvent&)>& callback) override;
         bool IsKeyDown(Key key) const override;
+        void AttachToNativeWindow(void* native_handle) override;
 
     private:
+        SDL_Window* mSDLWindow = nullptr;
+
         std::function<void(const InputEvent&)> eventCallback;
         Key TranslateKey(SDL_Keycode keycode);
         // Map high-level keys to pressed state for IsKeyDown

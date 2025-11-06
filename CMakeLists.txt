@@ -48,6 +48,9 @@ add_subdirectory(Thirdparty/jolt/Build)
 log("Adding GLFW...")
 add_subdirectory(Thirdparty/glfw)
 
+log("Adding Luau...")
+add_subdirectory(Thirdparty/luau)
+
 log("Thirdparty Libraries Configured.")
 
 # -------- Engine & Modules --------

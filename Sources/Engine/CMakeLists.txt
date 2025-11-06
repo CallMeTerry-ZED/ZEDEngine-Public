@@ -23,12 +23,19 @@ target_include_directories(Engine PUBLIC
         ${THIRDPARTY_DIR}/sdl3/include
         ${THIRDPARTY_DIR}/glfw/include
         ${SIMPLEINI_DIR}
+        ${THIRDPARTY_DIR}/luau/
 )
 
 target_link_libraries(Engine PRIVATE
         Jolt::Jolt
         SDL3::SDL3-shared
         glfw
+        Luau.VM
+        Luau.Common
+        Luau.Compiler
+        Luau.CodeGen
+        Luau.Config
+        Luau.Require
 )
 
 target_compile_definitions(Engine PRIVATE

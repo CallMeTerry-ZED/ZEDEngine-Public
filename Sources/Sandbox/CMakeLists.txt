@@ -24,6 +24,7 @@ target_include_directories(Sandbox PUBLIC
         ${SOURCES_DIR}/Modules/Window/Window-GLFW/include
         ${SOURCES_DIR}/Modules/Input/Input-SDL3/include
         ${THIRDPARTY_DIR}/sdl3/include
+        ${THIRDPARTY_DIR}/luau/
 )
 
 target_link_libraries(Sandbox PRIVATE

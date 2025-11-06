@@ -25,11 +25,6 @@ namespace ZED
         return s_InputImpl;
     }
 
-    // void Input::Update()
-    // {
-    //     if (s_InputImpl) s_InputImpl->Update();
-    // }
-
     bool Input::IsKeyDown(Key k) const
     {
         return s_InputImpl ? s_InputImpl->IsKeyDown(k) : false;

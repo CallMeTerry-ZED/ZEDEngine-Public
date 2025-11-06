@@ -7,6 +7,7 @@
 #include "Engine/Input/Input.h"
 #include "Engine/Config/Config.h"
 #include "Engine/Module/ModuleLoader.h"
+#include "Engine/Events/EventSystem.h"
 
 #include <Windows.h>
 #include <iostream>
@@ -55,10 +56,11 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    // Set up input event callback
     ZED::Input::GetInput()->SetEventCallback([](const ZED::InputEvent& e)
     {
-        switch (e.type)
-        {
+        // logging of input events *just to ensure it works
+        switch (e.type) {
             case ZED::InputEventType::KeyDown:
                 std::cout << "Key Down: " << static_cast<int>(e.key) << "\n";
                 break;
@@ -68,22 +70,40 @@ int main(int argc, char* argv[])
             case ZED::InputEventType::MouseMove:
                 std::cout << "Mouse Move: (" << e.mouseX << ", " << e.mouseY << ")\n";
                 break;
+            default:
+                break;
         }
     });
 
     // Main loop
     while (window->IsRunning())
     {
-        // Poll input events first.  SDL queues are global, so if the window
-        // consumes events before the input system sees them, keyboard and mouse
-        // callbacks will be missed.  Calling the input poller first ensures
-        // that input events are processed before the window drains the queue.
-        ZED::Input::GetInput()->PollEvents();
+        // Poll window events
         window->PollEvents();
 
+        // Poll input events
+        ZED::Input::GetInput()->PollEvents();
+
+        // Move deferred events into the immediate queue, then dispatch all
+        ZED::EventSystem::Get().DispatchDeferred();
+        ZED::EventSystem::Get().Dispatch();
+
+        // Key test: continuous key state check
         if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::W))
         {
             std::cout << "[Continuous] W is held down\n";
+        }
+        else if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::S))
+        {
+            std::cout << "[Continuous] S is held down\n";
+        }
+        else if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::A))
+        {
+            std::cout << "[Continuous] A is held down\n";
+        }
+        else if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::D))
+        {
+            std::cout << "[Continuous] D is held down\n";
         }
 
         ZED::Time::Sleep(16);

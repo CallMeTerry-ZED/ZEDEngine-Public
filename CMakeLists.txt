@@ -36,8 +36,8 @@ set(SIMPLEINI_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Thirdparty/simpleini)
 include_directories(${SIMPLEINI_DIR})
 
 # Jolt Physics Config
-set(JPH_BUILD_SHARED_LIBS ON CACHE BOOL "Compile Jolt as a shared library")
-set(JPH_SHARED_LIBRARY ON CACHE BOOL "Sets Jolt as a shared library")
+set(JPH_BUILD_SHARED_LIBS OFF CACHE BOOL "Compile Jolt as a shared library")
+set(JPH_SHARED_LIBRARY OFF CACHE BOOL "Sets Jolt as a shared library")
 set(JPH_DEBUG_RENDERER ON CACHE BOOL "Adds support to draw lines and triangles")
 set(JPH_CROSS_PLATFORM_DETERMINISTIC ON CACHE BOOL "Turns on behavior to attempt cross platform determinism")
 set(JPH_DET_LOG ON CACHE BOOL "Turns on a lot of extra logging to help debug determinism issues when JPH_CROSS_PLATFORM_DETERMINISTIC is turned on")
@@ -45,11 +45,32 @@ set(CPP_RTTI_ENABLED ON CACHE BOOL "Enables RTTI inside Jolt to avoid typeinfo l
 log("Adding Jolt Physics...")
 add_subdirectory(Thirdparty/jolt/Build)
 
+# Bullet Physics Config
+set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
+set(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "")
+set(BUILD_UNIT_TESTS OFF CACHE BOOL "")
+set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "")
+set(BUILD_BULLET3 ON CACHE BOOL "")
+set(BUILD_CPU_DEMOS OFF CACHE BOOL "")
+set(BUILD_BULLET_ROBOTICS OFF CACHE BOOL "")
+set(BUILD_EXTRAS ON CACHE BOOL "")
+set(BUILD_ENET OFF CACHE BOOL "")
+set(BUILD_CLSOCKET OFF CACHE BOOL "")
+set(BUILD_OPENGL3_DEMOS OFF CACHE BOOL "")
+set(INSTALL_EXTRA_LIBS OFF CACHE BOOL "")
+set(INSTALL_LIBS OFF CACHE BOOL "")
+log("Adding Bullet Physics...")
+add_subdirectory(Thirdparty/bullet3)
+
 log("Adding GLFW...")
 add_subdirectory(Thirdparty/glfw)
 
 log("Adding Luau...")
 add_subdirectory(Thirdparty/luau)
+
+log("Adding Entt...")
+add_subdirectory(Thirdparty/entt)
 
 log("Thirdparty Libraries Configured.")
 
@@ -73,6 +94,13 @@ log("Adding Input Module: SDL3...")
 add_subdirectory(Sources/Modules/Input/Input-SDL3)
 
 log("Input Modules Setup Complete!")
+
+log("Setting up Scripting Modules...")
+
+log("Adding Scripting Module: Luau...")
+add_subdirectory(Sources/Modules/Script/Script-Luau)
+
+log("Scripting Modules Setup Complete!")
 
 # -------- Executables / Applications --------
 log("Adding Sandbox Application...")

@@ -15,7 +15,7 @@ namespace ZED
 
     bool SDLInput::Init()
     {
-        if (!SDL_Init(SDL_INIT_VIDEO |SDL_INIT_GAMEPAD | SDL_INIT_EVENTS))
+        if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_GAMEPAD | SDL_INIT_EVENTS))
         {
             std::cerr << "SDL_Init Error: " << SDL_GetError() << "\n";
             return false;

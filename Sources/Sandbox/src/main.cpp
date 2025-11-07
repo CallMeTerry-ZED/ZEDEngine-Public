@@ -8,6 +8,11 @@
 #include "Engine/Config/Config.h"
 #include "Engine/Module/ModuleLoader.h"
 #include "Engine/Events/EventSystem.h"
+#include "Engine/ECS/ECS.h"
+#include "Engine/ECS/Components/ScriptComponent.h"
+#include "Engine/ECS/Systems/ScriptSystems.h"
+#include "Engine/Scripting/Scripting.h"
+#include "Engine/Interfaces/Scripting/IScripting.h"
 
 #include <Windows.h>
 #include <iostream>
@@ -15,6 +20,7 @@
 typedef ZED::IWindow* (*CreateWindowFunc)();
 typedef void (*RegisterTimeFunc)();
 typedef void (*RegisterInputFunc)();
+typedef ZED::IScripting*   (*CreateScriptingFunc)();
 
 int main(int argc, char* argv[])
 {
@@ -38,6 +44,13 @@ int main(int argc, char* argv[])
     if (registerInput)
     {
         registerInput();
+    }
+
+    ZED::IScripting* scripting = nullptr;
+    if (auto createScripting = (CreateScriptingFunc)
+        ZED::Module::ModuleLoader::GetFunction("Scripting", "CreateScripting"))
+    {
+        scripting = createScripting();
     }
 
     // Create a window via the Window module
@@ -66,8 +79,9 @@ int main(int argc, char* argv[])
     // Set up input event callback
     input->SetEventCallback([](const ZED::InputEvent& e)
     {
-        // logging of input events *just to ensure it works
-        switch (e.type) {
+        // Logging of input events *just to ensure it works
+        switch (e.type)
+        {
             case ZED::InputEventType::KeyDown:
                 std::cout << "Key Down: " << static_cast<int>(e.key) << "\n";
                 break;
@@ -82,7 +96,21 @@ int main(int argc, char* argv[])
         }
     });
 
+    // --- ECS + Scripting smoke test ---
+    // hook lifecycle signals once
+    ZED::ScriptLifecycleSystem::connect(ZED::ECS::ECS::Registry());
+
+    // Load a compiled luau bytecode file, then attach to an entity
+    if (scripting)
+    {
+        auto sid = scripting->LoadBytecodeFile("Assets/Scripts/test.luau.bc");
+        auto& reg = ZED::ECS::ECS::Registry();
+        auto e = reg.create();
+        reg.emplace<ZED::ScriptComponent>(e, ZED::ScriptComponent{ sid.value, true });
+    }
+
     // Main loop
+    const double dt = 1.0 / 60.0;
     while (window->IsRunning())
     {
         // Poll window events
@@ -90,6 +118,9 @@ int main(int argc, char* argv[])
 
         // Poll input events
         ZED::Input::GetInput()->PollEvents();
+
+        // Tick scripts (per-entity)
+        ZED::ScriptUpdateSystem::tick(ZED::ECS::ECS::Registry(), dt);
 
         // Move deferred events into the immediate queue, then dispatch all
         ZED::EventSystem::Get().DispatchDeferred();

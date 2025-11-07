@@ -9,6 +9,8 @@ file(GLOB_RECURSE ENGINE_SRC CONFIGURE_DEPENDS
 )
 
 file(GLOB_RECURSE ENGINE_INC CONFIGURE_DEPENDS
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.hpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/*.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/*.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/*.hpp
 )
@@ -23,19 +25,31 @@ target_include_directories(Engine PUBLIC
         ${THIRDPARTY_DIR}/sdl3/include
         ${THIRDPARTY_DIR}/glfw/include
         ${SIMPLEINI_DIR}
-        ${THIRDPARTY_DIR}/luau/
+        ${THIRDPARTY_DIR}/luau
+        ${THIRDPARTY_DIR}/entt/src
 )
 
 target_link_libraries(Engine PRIVATE
         Jolt::Jolt
         SDL3::SDL3-shared
         glfw
+        EnTT::EnTT
         Luau.VM
         Luau.Common
         Luau.Compiler
         Luau.CodeGen
         Luau.Config
         Luau.Require
+        Bullet3Common
+        Bullet3Dynamics
+        Bullet3Geometry
+        BulletDynamics
+        BulletCollision
+        LinearMath
+        BulletSoftBody
+        BulletInverseDynamics
+        BulletFileLoader
+        BulletWorldImporter
 )
 
 target_compile_definitions(Engine PRIVATE

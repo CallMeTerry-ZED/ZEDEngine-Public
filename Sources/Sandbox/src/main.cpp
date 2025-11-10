@@ -2,25 +2,15 @@
  * © 2025 ZED Interactive. All Rights Reserved.
  */
 
-#include "Engine/IWindow.h"
-#include "Engine/Time.h"
-#include "Engine/Input/Input.h"
-#include "Engine/Config/Config.h"
-#include "Engine/Module/ModuleLoader.h"
-#include "Engine/Events/EventSystem.h"
-#include "Engine/ECS/ECS.h"
-#include "Engine/ECS/Components/ScriptComponent.h"
-#include "Engine/ECS/Systems/ScriptSystems.h"
-#include "Engine/Scripting/Scripting.h"
-#include "Engine/Interfaces/Scripting/IScripting.h"
+#include "ZEDEngine.h"
 
-#include <Windows.h>
 #include <iostream>
 
 typedef ZED::IWindow* (*CreateWindowFunc)();
+typedef ZED::IScripting* (*CreateScriptingFunc)();
+typedef ZED::IRenderer* (*CreateRendererFunc)();
 typedef void (*RegisterTimeFunc)();
 typedef void (*RegisterInputFunc)();
-typedef ZED::IScripting*   (*CreateScriptingFunc)();
 
 int main(int argc, char* argv[])
 {
@@ -67,6 +57,21 @@ int main(int argc, char* argv[])
     {
         std::cerr << "[ZED::Main] Failed to init window\n";
         return -1;
+    }
+
+    auto createRenderer = (CreateRendererFunc)
+        ZED::Module::ModuleLoader::GetFunction("Renderer", "CreateRenderer");
+    if (!createRenderer)
+    {
+        std::cerr << "[ZED::Main] CreateRenderer not found\n";
+        return -1;
+    }
+
+    ZED::IRenderer* renderer = createRenderer();
+    // Width and Height must be the same as the window
+    if (!renderer->Init(window->GetNativeHandle(), 800, 600))
+    {
+        std::cerr << "[ZED::Main] Failed to init renderer\n";
     }
 
     // After RegisterInput(), get the input instance
@@ -119,6 +124,13 @@ int main(int argc, char* argv[])
         // Poll input events
         ZED::Input::GetInput()->PollEvents();
 
+        static double t = 0.0;
+        t += dt;
+
+        renderer->BeginFrame(0.06f, 0.06f, 0.08f, 1.0f);
+        renderer->DrawTestCube((float)t);
+        renderer->EndFrame();
+
         // Tick scripts (per-entity)
         ZED::ScriptUpdateSystem::tick(ZED::ECS::ECS::Registry(), dt);
 
@@ -147,7 +159,9 @@ int main(int argc, char* argv[])
         ZED::Time::Sleep(16);
     }
 
+    renderer->Shutdown();
     window->Shutdown();
+    delete renderer;
     delete window;
 
     // Cleanup loaded modules

@@ -29,10 +29,15 @@ target_include_directories(Sandbox PUBLIC
 
 target_link_libraries(Sandbox PRIVATE
         Engine
+        # Window Modules
         Window-GLFW
         Window-SDL3
+        # Input Modules
         Input-SDL3
+        # Script Modules
         Script-Luau
+        # Renderer Modules
+        Renderer-D3D11
 )
 
 target_compile_definitions(Sandbox PRIVATE

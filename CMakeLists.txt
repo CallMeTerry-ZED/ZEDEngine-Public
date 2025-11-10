@@ -102,6 +102,13 @@ add_subdirectory(Sources/Modules/Script/Script-Luau)
 
 log("Scripting Modules Setup Complete!")
 
+log("Setting up Renderer Modules...")
+
+log("Adding Renderer Module: D3D11...")
+add_subdirectory(Sources/Modules/Renderer/Renderer-D3D11)
+
+log("Renderer Modules Setup Complete!")
+
 # -------- Executables / Applications --------
 log("Adding Sandbox Application...")
 add_subdirectory(Sources/Sandbox)

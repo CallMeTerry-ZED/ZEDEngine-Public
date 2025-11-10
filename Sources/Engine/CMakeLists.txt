@@ -50,6 +50,9 @@ target_link_libraries(Engine PRIVATE
         BulletInverseDynamics
         BulletFileLoader
         BulletWorldImporter
+        d3d11
+        dxgi
+        d3dcompiler
 )
 
 target_compile_definitions(Engine PRIVATE

@@ -32,4 +32,42 @@ namespace ZED
             std::cerr << "[ZED::Time] Warning: No sleep implementation linked!" << std::endl;
         }
     }
+
+    void Time::Update()
+    {
+        if (g_timeImpl)
+        {
+            g_timeImpl->Update();
+        }
+        else
+        {
+            std::cerr << "[ZED::Time] Warning: No time implementation linked!" << std::endl;
+        }
+    }
+
+    double Time::GetDeltaTime()
+    {
+        if (g_timeImpl)
+        {
+            return g_timeImpl->GetDeltaTime();
+        }
+        else
+        {
+            std::cerr << "[ZED::Time] Warning: No time implementation linked!" << std::endl;
+            return 0.0;
+        }
+    }
+
+    double Time::GetElapsedTime()
+    {
+        if (g_timeImpl)
+        {
+            return g_timeImpl->GetElapsedTime();
+        }
+        else
+        {
+            std::cerr << "[ZED::Time] Warning: No time implementation linked!" << std::endl;
+            return 0.0;
+        }
+    }
 }

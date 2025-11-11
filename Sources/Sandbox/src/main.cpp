@@ -2,8 +2,10 @@
  * © 2025 ZED Interactive. All Rights Reserved.
  */
 
+// Single Engine include to catch em all haha....yes these comments are getting boring to me...
 #include "ZEDEngine.h"
 
+// Windows/Mac/Linux includes
 #include <iostream>
 
 typedef ZED::IWindow* (*CreateWindowFunc)();
@@ -115,24 +117,27 @@ int main(int argc, char* argv[])
     }
 
     // Main loop
-    const double dt = 1.0 / 60.0;
     while (window->IsRunning())
     {
+        ZED::Time::Update();
+
         // Poll window events
         window->PollEvents();
 
         // Poll input events
         ZED::Input::GetInput()->PollEvents();
 
-        static double t = 0.0;
-        t += dt;
+        double time = ZED::Time::GetElapsedTime();
+        double deltaTime = ZED::Time::GetDeltaTime();
+
+        time += deltaTime;
 
         renderer->BeginFrame(0.06f, 0.06f, 0.08f, 1.0f);
-        renderer->DrawTestCube((float)t);
+        renderer->DrawTestCube((float)time);
         renderer->EndFrame();
 
         // Tick scripts (per-entity)
-        ZED::ScriptUpdateSystem::tick(ZED::ECS::ECS::Registry(), dt);
+        ZED::ScriptUpdateSystem::tick(ZED::ECS::ECS::Registry(), deltaTime);
 
         // Move deferred events into the immediate queue, then dispatch all
         ZED::EventSystem::Get().DispatchDeferred();

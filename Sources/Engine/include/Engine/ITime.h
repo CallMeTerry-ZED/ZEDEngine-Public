@@ -13,7 +13,18 @@ namespace ZED
     {
     public:
         virtual ~ITime() = default;
+
+        // Sleep for the specified number of milliseconds
         virtual void Sleep(unsigned int milliseconds) = 0;
+
+        // Update time calculations (call once per frame)
+        virtual void Update() = 0;
+
+        // Get delta time in seconds since last frame
+        virtual double GetDeltaTime() const = 0;
+
+        // Get total elapsed time in seconds since first Update() call
+        virtual double GetElapsedTime() const = 0;
     };
 
     // Global accessor (like singleton-style access)

@@ -72,6 +72,9 @@ add_subdirectory(Thirdparty/luau)
 log("Adding Entt...")
 add_subdirectory(Thirdparty/entt)
 
+log("Adding GLM...")
+add_subdirectory(Thirdparty/glm)
+
 log("Thirdparty Libraries Configured.")
 
 # -------- Engine & Modules --------

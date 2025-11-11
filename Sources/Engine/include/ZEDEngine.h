@@ -18,5 +18,6 @@
 #include "Engine/ECS/Systems/ScriptSystems.h"
 #include "Engine/Interfaces/Scripting/IScripting.h"
 #include "Engine/Interfaces/Renderer/IRenderer.h"
+#include "Engine/Math/Math.h"
 
 #endif

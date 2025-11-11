@@ -3,6 +3,7 @@
  */
 
 #include "Renderer-D3D11/D3D11Renderer.h"
+#include <cstring>
 #include <cmath>
 #include <iostream>
 
@@ -139,24 +140,21 @@ float4 main(PSIn input) : SV_Target
 	{
 		if (!m_context) return;
 
-		// Build MVP: perspective * rotation * translation
 		const float aspect = (m_height > 0) ? (float)m_width / (float)m_height : 1.0f;
-	    float4x4 P = MakePerspective(60.0f * 3.14159265f / 180.0f, aspect, 0.1f, 100.0f);
-	    float4x4 R = MakeRotationY(timeSeconds * 1.0f);
-	    float4x4 T = MakeTranslation(0.0f, 0.0f, 3.0f);
-	    float4x4 M = Mul(T, R);          // model = translate then rotate (inno if we should switch to rotate then translate ngl)
-	    float4x4 MVP = Mul(P, M);        // projection * model
+		const float fov    = 60.0f * 3.14159265f / 180.0f;
 
-		// Upload constants
+		ZED::Mat4 P = ZED::PerspectiveLH_ZO(fov, aspect, 0.1f, 100.0f);
+		ZED::Mat4 M = ZED::Translate(ZED::Vec3(0.0f, 0.0f, 3.0f)) * ZED::RotateY(timeSeconds * 1.0f);
+		ZED::Mat4 MVP = P * M;
+
 		D3D11_MAPPED_SUBRESOURCE mapped{};
 		if (SUCCEEDED(m_context->Map(m_cbuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
 		{
-			VSConstants* c = reinterpret_cast<VSConstants*>(mapped.pData);
-			for (int i = 0; i < 16; ++i) c->mvp[i] = MVP.m[i];
+			const float* src = ZED::ValuePtr(MVP);
+			std::memcpy(mapped.pData, src, sizeof(float) * 16);
 			m_context->Unmap(m_cbuffer.Get(), 0);
 		}
 
-		// Bind pipeline
 		UINT stride = sizeof(float) * 6;
 		UINT offset = 0;
 		m_context->IASetVertexBuffers(0, 1, m_vb.GetAddressOf(), &stride, &offset);
@@ -217,7 +215,7 @@ float4 main(PSIn input) : SV_Target
 		scd.SampleDesc.Count = 1;
 		scd.SampleDesc.Quality = 0;
 		scd.Windowed = TRUE;
-		scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD; // simplest, broad support
+		scd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
 		UINT flags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 		#if defined(_DEBUG)
@@ -294,7 +292,6 @@ float4 main(PSIn input) : SV_Target
 			return false;
 		}
 
-		// Basic depth state
 		D3D11_DEPTH_STENCIL_DESC dss{};
 		dss.DepthEnable = TRUE;
 		dss.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -306,7 +303,6 @@ float4 main(PSIn input) : SV_Target
 			return false;
 		}
 
-		// Basic rasterizer
 		D3D11_RASTERIZER_DESC rs{};
 		rs.FillMode = D3D11_FILL_SOLID;
 		rs.CullMode = D3D11_CULL_BACK;
@@ -367,10 +363,8 @@ float4 main(PSIn input) : SV_Target
 
 	bool D3D11Renderer::CreateCubeGeometry()
 	{
-		// 8 vertices, colored
 		const float v[] =
 		{
-			// x, y, z,				r, g, b
 			-1, -1, -1,				1, 0, 0,
 			-1,  1, -1,				0, 1, 0,
 			 1,  1, -1,				0, 0, 1,
@@ -383,17 +377,11 @@ float4 main(PSIn input) : SV_Target
 
 		const uint32_t i[] =
 		{
-			// front (-Z)
 			0,1,2,  0,2,3,
-			// back (+Z)
 			4,6,5,  4,7,6,
-			// left (-X)
 			4,5,1,  4,1,0,
-			// right (+X)
 			3,2,6,  3,6,7,
-			// top (+Y)
 			1,5,6,  1,6,2,
-			// bottom (-Y)
 			4,0,3,  4,3,7
 		};
 		m_indexCount = (UINT)(sizeof(i) / sizeof(i[0]));
@@ -433,53 +421,5 @@ float4 main(PSIn input) : SV_Target
 			return false;
 		}
 		return true;
-	}
-
-	// Minimal column-major matrices (HLSL default)
-	D3D11Renderer::float4x4 D3D11Renderer::Mul(const float4x4& a, const float4x4& b)
-	{
-		float4x4 r{};
-		for (int row = 0; row < 4; ++row)
-		{
-			for (int col = 0; col < 4; ++col)
-			{
-				float sum = 0.0f;
-				for (int k = 0; k < 4; ++k)
-					sum += a.m[k * 4 + row] * b.m[col * 4 + k];
-				r.m[col * 4 + row] = sum;
-			}
-		}
-		return r;
-	}
-
-	D3D11Renderer::float4x4 D3D11Renderer::MakePerspective(float fovy, float aspect, float znear, float zfar)
-	{
-		float f = 1.0f / std::tan(fovy * 0.5f);
-		float4x4 m{};
-		m.m[0] = f / aspect;
-		m.m[5] = f;
-		m.m[10] = zfar / (zfar - znear);
-		m.m[11] = 1.0f;
-		m.m[14] = (-znear * zfar) / (zfar - znear);
-		return m;
-	}
-
-	D3D11Renderer::float4x4 D3D11Renderer::MakeRotationY(float a)
-	{
-		float c = std::cos(a), s = std::sin(a);
-		float4x4 m{};
-		m.m[0] = c;	m.m[2] = -s;
-		m.m[5] = 1;
-		m.m[8] = s;	m.m[10] = c;
-		m.m[15] = 1;
-		return m;
-	}
-
-	D3D11Renderer::float4x4 D3D11Renderer::MakeTranslation(float x, float y, float z)
-	{
-		float4x4 m{};
-		m.m[0] = 1; m.m[5] = 1; m.m[10] = 1; m.m[15] = 1;
-		m.m[12] = x; m.m[13] = y; m.m[14] = z;
-		return m;
 	}
 }

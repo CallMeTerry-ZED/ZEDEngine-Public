@@ -27,6 +27,7 @@ target_include_directories(Engine PUBLIC
         ${SIMPLEINI_DIR}
         ${THIRDPARTY_DIR}/luau
         ${THIRDPARTY_DIR}/entt/src
+        ${THIRDPARTY_DIR}/glm
 )
 
 target_link_libraries(Engine PRIVATE
@@ -53,10 +54,16 @@ target_link_libraries(Engine PRIVATE
         d3d11
         dxgi
         d3dcompiler
+        glm::glm
 )
 
 target_compile_definitions(Engine PRIVATE
         "ZEDENGINE_API=__declspec(dllexport)"
         ZEDENGINE_EXPORTS
         GLFW_INCLUDE_NONE
+
+        # DirectX math conventions for GLM
+        GLM_FORCE_LEFT_HANDED
+        GLM_FORCE_DEPTH_ZERO_TO_ONE
+        GLM_FORCE_RADIANS
 )

@@ -15,15 +15,16 @@ using Microsoft::WRL::ComPtr;
 
 namespace ZED
 {
-	struct VSConstants
-	{
-		float mvp[16];
-	};
-
+	// Shaders: frame (view/proj) + object (model); LH, ZO depth
 	static const char* kVS = R"(
-cbuffer VSConstants : register(b0)
+cbuffer CBFrame  : register(b0)
 {
-	float4x4 u_MVP;
+	float4x4 u_View;
+	float4x4 u_Proj;
+};
+cbuffer CBObject : register(b1)
+{
+	float4x4 u_Model;
 };
 
 struct VSIn
@@ -41,7 +42,9 @@ struct VSOut
 VSOut main(VSIn input)
 {
 	VSOut o;
-	o.pos = mul(u_MVP, float4(input.pos, 1.0f));
+	float4 wpos = mul(u_Model, float4(input.pos, 1.0f));
+	float4 vpos = mul(u_View,  wpos);
+	o.pos = mul(u_Proj, vpos);
 	o.col = input.col;
 	return o;
 }
@@ -113,11 +116,10 @@ float4 main(PSIn input) : SV_Target
 			return;
 		}
 
-		if (!CreateBackbufferTargets(width, height))
-			return;
+		CreateBackbufferTargets(width, height);
 	}
 
-	void D3D11Renderer::BeginFrame(float r, float g, float b, float a)
+	void D3D11Renderer::BeginFrame(float r, float g, float b, float a, const ZED::Mat4& view, const ZED::Mat4& proj)
 	{
 		if (!m_context || !m_rtv || !m_dsv) return;
 
@@ -134,38 +136,54 @@ float4 main(PSIn input) : SV_Target
 		vp.TopLeftX = 0.0f;
 		vp.TopLeftY = 0.0f;
 		m_context->RSSetViewports(1, &vp);
+
+		// Upload frame constants
+		if (m_cbFrame)
+		{
+			D3D11_MAPPED_SUBRESOURCE mapped{};
+			if (SUCCEEDED(m_context->Map(m_cbFrame.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+			{
+				auto* dst = reinterpret_cast<CBFrame*>(mapped.pData);
+				std::memcpy(dst->view,  ZED::ValuePtr(view), sizeof(float) * 16);
+				std::memcpy(dst->proj,  ZED::ValuePtr(proj), sizeof(float) * 16);
+				m_context->Unmap(m_cbFrame.Get(), 0);
+			}
+		}
+
+		// Bind pipeline static bits
+		m_context->IASetInputLayout(m_layout.Get());
+		m_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		m_context->VSSetShader(m_vs.Get(), nullptr, 0);
+		m_context->PSSetShader(m_ps.Get(), nullptr, 0);
+		m_context->VSSetConstantBuffers(0, 1, m_cbFrame.GetAddressOf()); // b0
 	}
 
-	void D3D11Renderer::DrawTestCube(float timeSeconds)
+	void D3D11Renderer::DrawCube(const ZED::Mat4& model)
 	{
 		if (!m_context) return;
 
-		const float aspect = (m_height > 0) ? (float)m_width / (float)m_height : 1.0f;
-		const float fov    = 60.0f * 3.14159265f / 180.0f;
-
-		ZED::Mat4 P = ZED::PerspectiveLH_ZO(fov, aspect, 0.1f, 100.0f);
-		ZED::Mat4 M = ZED::Translate(ZED::Vec3(0.0f, 0.0f, 3.0f)) * ZED::RotateY(timeSeconds * 1.0f);
-		ZED::Mat4 MVP = P * M;
-
-		D3D11_MAPPED_SUBRESOURCE mapped{};
-		if (SUCCEEDED(m_context->Map(m_cbuffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+		// Upload object constants
+		if (m_cbObject)
 		{
-			const float* src = ZED::ValuePtr(MVP);
-			std::memcpy(mapped.pData, src, sizeof(float) * 16);
-			m_context->Unmap(m_cbuffer.Get(), 0);
+			D3D11_MAPPED_SUBRESOURCE mapped{};
+			if (SUCCEEDED(m_context->Map(m_cbObject.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped)))
+			{
+				auto* dst = reinterpret_cast<CBObject*>(mapped.pData);
+				std::memcpy(dst->model, ZED::ValuePtr(model), sizeof(float) * 16);
+				m_context->Unmap(m_cbObject.Get(), 0);
+			}
 		}
 
+		// Bind geometry
 		UINT stride = sizeof(float) * 6;
 		UINT offset = 0;
 		m_context->IASetVertexBuffers(0, 1, m_vb.GetAddressOf(), &stride, &offset);
 		m_context->IASetIndexBuffer(m_ib.Get(), DXGI_FORMAT_R32_UINT, 0);
-		m_context->IASetInputLayout(m_layout.Get());
-		m_context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
-		m_context->VSSetShader(m_vs.Get(), nullptr, 0);
-		m_context->VSSetConstantBuffers(0, 1, m_cbuffer.GetAddressOf());
-		m_context->PSSetShader(m_ps.Get(), nullptr, 0);
+		// Bind object constants at b1
+		m_context->VSSetConstantBuffers(1, 1, m_cbObject.GetAddressOf());
 
+		// Draw
 		m_context->DrawIndexed(m_indexCount, 0, 0);
 	}
 
@@ -192,7 +210,8 @@ float4 main(PSIn input) : SV_Target
 		m_layout.Reset();
 		m_vs.Reset();
 		m_ps.Reset();
-		m_cbuffer.Reset();
+		m_cbFrame.Reset();
+		m_cbObject.Reset();
 		m_rs.Reset();
 		m_dss.Reset();
 
@@ -292,6 +311,7 @@ float4 main(PSIn input) : SV_Target
 			return false;
 		}
 
+		// Depth/raster states
 		D3D11_DEPTH_STENCIL_DESC dss{};
 		dss.DepthEnable = TRUE;
 		dss.DepthWriteMask = D3D11_DEPTH_WRITE_MASK_ALL;
@@ -349,14 +369,21 @@ float4 main(PSIn input) : SV_Target
 		if (FAILED(m_device->CreateInputLayout(il, 2, vsb->GetBufferPointer(), vsb->GetBufferSize(), m_layout.GetAddressOf())))
 			return false;
 
-		D3D11_BUFFER_DESC cbd{};
-		cbd.ByteWidth = sizeof(VSConstants);
-		cbd.Usage = D3D11_USAGE_DYNAMIC;
-		cbd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		cbd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		// Constant buffers
+		{
+			D3D11_BUFFER_DESC bd{};
+			bd.Usage = D3D11_USAGE_DYNAMIC;
+			bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+			bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 
-		if (FAILED(m_device->CreateBuffer(&cbd, nullptr, m_cbuffer.GetAddressOf())))
-			return false;
+			bd.ByteWidth = sizeof(CBFrame);
+			if (FAILED(m_device->CreateBuffer(&bd, nullptr, m_cbFrame.GetAddressOf())))
+				return false;
+
+			bd.ByteWidth = sizeof(CBObject);
+			if (FAILED(m_device->CreateBuffer(&bd, nullptr, m_cbObject.GetAddressOf())))
+				return false;
+		}
 
 		return true;
 	}

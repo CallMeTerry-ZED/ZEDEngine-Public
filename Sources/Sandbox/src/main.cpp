@@ -103,7 +103,6 @@ int main(int argc, char* argv[])
         }
     });
 
-    // --- ECS + Scripting smoke test ---
     // hook lifecycle signals once
     ZED::ScriptLifecycleSystem::connect(ZED::ECS::ECS::Registry());
 
@@ -116,10 +115,59 @@ int main(int argc, char* argv[])
         reg.emplace<ZED::ScriptComponent>(e, ZED::ScriptComponent{ sid.value, true });
     }
 
+    // Create a camera entity
+    {
+        auto& reg = ZED::ECS::ECS::Registry();
+
+        auto camEnt = reg.create();
+        ZED::TransformComponent camTr{};
+        camTr.position = ZED::Vec3(0.0f, 0.0f, -6.0f); // LH: camera behind origin looking +Z; inverse will look forward
+        reg.emplace<ZED::TransformComponent>(camEnt, camTr);
+
+        ZED::CameraComponent camComp{};
+        camComp.primary = true;
+        camComp.aspect = static_cast<float>(800) / static_cast<float>(600);
+        reg.emplace<ZED::CameraComponent>(camEnt, camComp);
+    }
+
+    // Transform Test: create a few entities with transforms
+    {
+        auto& reg = ZED::ECS::ECS::Registry();
+
+        auto e1 = reg.create();
+        reg.emplace<ZED::TransformComponent>(e1, ZED::TransformComponent{
+            .position = ZED::Vec3(-2.0f, 0.0f, 0.0f),
+            .rotation = ZED::Vec3(0.0f, 0.0f, 0.0f),
+            .scale    = ZED::Vec3(1.0f, 1.0f, 1.0f)
+        });
+
+        auto e2 = reg.create();
+        reg.emplace<ZED::TransformComponent>(e2, ZED::TransformComponent{
+            .position = ZED::Vec3( 0.0f, 0.0f, 0.0f),
+            .rotation = ZED::Vec3(0.0f, 0.0f, 0.0f),
+            .scale    = ZED::Vec3(1.0f, 1.0f, 1.0f)
+        });
+
+        auto e3 = reg.create();
+        reg.emplace<ZED::TransformComponent>(e3, ZED::TransformComponent{
+            .position = ZED::Vec3( 2.0f, 0.0f, 0.0f),
+            .rotation = ZED::Vec3(0.0f, 0.0f, 0.0f),
+            .scale    = ZED::Vec3(1.0f, 1.0f, 1.0f)
+        });
+    }
+
+    // Initialize camera system
+    ZED::CameraSystem::Init();
+    ZED::CameraSystem::SetAspect(static_cast<float>(800) / static_cast<float>(600));
+
     // Main loop
     while (window->IsRunning())
     {
         ZED::Time::Update();
+        double time = ZED::Time::GetElapsedTime();
+        double deltaTime = ZED::Time::GetDeltaTime();
+
+        time += deltaTime;
 
         // Poll window events
         window->PollEvents();
@@ -127,13 +175,25 @@ int main(int argc, char* argv[])
         // Poll input events
         ZED::Input::GetInput()->PollEvents();
 
-        double time = ZED::Time::GetElapsedTime();
-        double deltaTime = ZED::Time::GetDeltaTime();
+        // Drive transforms: spin all around Y
+        ZED::TransformSystem::SpinAll(ZED::ECS::ECS::Registry(), deltaTime, ZED::Vec3(0.0f, 1.0f, 0.0f));
 
-        time += deltaTime;
+        // Camera update
+        ZED::CameraSystem::Update(ZED::ECS::ECS::Registry());
+        const ZED::Mat4& view = ZED::CameraSystem::GetView();
+        const ZED::Mat4& proj = ZED::CameraSystem::GetProj();
 
-        renderer->BeginFrame(0.06f, 0.06f, 0.08f, 1.0f);
-        renderer->DrawTestCube((float)time);
+        // Render all transforms as cubes
+        renderer->BeginFrame(0.06f, 0.06f, 0.08f, 1.0f, view, proj);
+
+        auto& reg = ZED::ECS::ECS::Registry();
+        auto tview = reg.view<ZED::TransformComponent>();
+        for (auto e : tview)
+        {
+            const auto& tr = tview.get<ZED::TransformComponent>(e);
+            renderer->DrawCube(tr.ToMatrix());
+        }
+
         renderer->EndFrame();
 
         // Tick scripts (per-entity)
@@ -161,7 +221,7 @@ int main(int argc, char* argv[])
             std::cout << "[Continuous] D is held down\n";
         }
 
-        ZED::Time::Sleep(16);
+        ZED::Time::Sleep(1);
     }
 
     renderer->Shutdown();

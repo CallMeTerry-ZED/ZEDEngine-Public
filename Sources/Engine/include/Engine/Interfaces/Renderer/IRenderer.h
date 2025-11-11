@@ -7,6 +7,7 @@
 
 #pragma once
 
+#include "Engine/Math/Math.h"
 #include <cstdint>
 
 namespace ZED
@@ -22,11 +23,14 @@ namespace ZED
         // Called on window resize
         virtual void Resize(int width, int height) = 0;
 
-        // Begin a frame with a clear color
-        virtual void BeginFrame(float r, float g, float b, float a) = 0;
+        // Begin a frame with a clear color and active camera matrices
+        virtual void BeginFrame(float r, float g, float b, float a, const Mat4& view, const Mat4& proj) = 0;
+
+        // Draw a unit cube transformed by model matrix (demo path)
+        virtual void DrawCube(const Mat4& model) = 0;
 
         // Simple demo draw: spinning cube
-        virtual void DrawTestCube(float timeSeconds) = 0;
+        //virtual void DrawTestCube(float timeSeconds) = 0;
 
         // Present the swap chain
         virtual void EndFrame() = 0;

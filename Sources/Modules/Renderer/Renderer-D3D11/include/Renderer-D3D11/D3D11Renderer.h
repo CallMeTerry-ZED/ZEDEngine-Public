@@ -29,8 +29,9 @@ namespace ZED
         bool Init(void* nativeHandle, int width, int height) override;
         void Resize(int width, int height) override;
 
-        void BeginFrame(float r, float g, float b, float a) override;
-        void DrawTestCube(float timeSeconds) override;
+        void BeginFrame(float r, float g, float b, float a, const Mat4& view, const Mat4& proj) override;
+        void DrawCube(const Mat4& model) override;
+        //void DrawTestCube(float timeSeconds) override;
         void EndFrame() override;
 
         void Shutdown() override;
@@ -64,7 +65,14 @@ namespace ZED
         Microsoft::WRL::ComPtr<ID3D11VertexShader> m_vs;
         Microsoft::WRL::ComPtr<ID3D11PixelShader> m_ps;
         Microsoft::WRL::ComPtr<ID3D11InputLayout> m_layout;
-        Microsoft::WRL::ComPtr<ID3D11Buffer> m_cbuffer;     // MVP
+
+        // Constant buffers
+        struct CBFrame { float view[16]; float proj[16]; };
+        struct CBObject { float model[16]; };
+
+        Microsoft::WRL::ComPtr<ID3D11Buffer> m_cbFrame;
+        Microsoft::WRL::ComPtr<ID3D11Buffer> m_cbObject;
+
         Microsoft::WRL::ComPtr<ID3D11RasterizerState> m_rs;
         Microsoft::WRL::ComPtr<ID3D11DepthStencilState> m_dss;
 

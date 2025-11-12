@@ -20,7 +20,6 @@ lib/
 *.obj
 *.so
 *.dll
-*.exe
 *.pdb
 *.idb
 *.ilk

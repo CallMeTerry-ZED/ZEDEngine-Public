@@ -86,17 +86,23 @@ int main(int argc, char* argv[])
     // Set up input event callback
     input->SetEventCallback([](const ZED::InputEvent& e)
     {
-        // Logging of input events *just to ensure it works
+        // Input Events
         switch (e.type)
         {
             case ZED::InputEventType::KeyDown:
-                std::cout << "Key Down: " << static_cast<int>(e.key) << "\n";
+                //std::cout << "Key Down: " << static_cast<int>(e.key) << "\n";
                 break;
             case ZED::InputEventType::KeyUp:
-                std::cout << "Key Up: " << static_cast<int>(e.key) << "\n";
+                //std::cout << "Key Up: " << static_cast<int>(e.key) << "\n";
                 break;
             case ZED::InputEventType::MouseMove:
-                std::cout << "Mouse Move: (" << e.mouseX << ", " << e.mouseY << ")\n";
+                //std::cout << "Mouse Move: (" << e.mouseX << ", " << e.mouseY << ")\n";
+                break;
+            case ZED::InputEventType::GamepadButtonDown:
+                //std::cout << "Gamepad Button Down: " << static_cast<int>(e.key) << "\n";
+                break;
+            case ZED::InputEventType::GamepadButtonUp:
+                //std::cout << "Gamepad Button Up: " << static_cast<int>(e.key) << "\n";
                 break;
             default:
                 break;
@@ -115,17 +121,18 @@ int main(int argc, char* argv[])
         reg.emplace<ZED::ScriptComponent>(e, ZED::ScriptComponent{ sid.value, true });
     }
 
-    // Create a camera entity
+    // Create camera entity with editor mode enabled
     {
         auto& reg = ZED::ECS::ECS::Registry();
 
         auto camEnt = reg.create();
         ZED::TransformComponent camTr{};
-        camTr.position = ZED::Vec3(0.0f, 0.0f, -6.0f); // LH: camera behind origin looking +Z; inverse will look forward
+        camTr.position = ZED::Vec3(0.0f, 0.0f, -6.0f);
         reg.emplace<ZED::TransformComponent>(camEnt, camTr);
 
         ZED::CameraComponent camComp{};
         camComp.primary = true;
+        camComp.editorMode = true;  // Enable editor mode camera control
         camComp.aspect = static_cast<float>(800) / static_cast<float>(600);
         reg.emplace<ZED::CameraComponent>(camEnt, camComp);
     }
@@ -160,6 +167,11 @@ int main(int argc, char* argv[])
     ZED::CameraSystem::Init();
     ZED::CameraSystem::SetAspect(static_cast<float>(800) / static_cast<float>(600));
 
+    // Initialize camera controller
+    ZED::CameraController::SetEnabled(true);
+    ZED::CameraController::SetMoveSpeed(5.0f);
+    ZED::CameraController::SetMouseSensitivity(0.002f);
+
     // Main loop
     while (window->IsRunning())
     {
@@ -174,6 +186,26 @@ int main(int argc, char* argv[])
 
         // Poll input events
         ZED::Input::GetInput()->PollEvents();
+
+        // Handle mouse capture for editor mode camera
+        bool leftMouseDown = ZED::Input::GetInput()->IsKeyDown(ZED::Key::MouseLeft);
+        if (leftMouseDown && !window->IsMouseCaptured())
+        {
+            window->SetMouseCapture(true);
+            window->SetMouseVisible(false);
+        }
+        else if (!leftMouseDown && window->IsMouseCaptured())
+        {
+            window->SetMouseCapture(false);
+            window->SetMouseVisible(true);
+        }
+
+        // Move deferred events into the immediate queue, then dispatch all
+        ZED::EventSystem::Get().DispatchDeferred();
+        ZED::EventSystem::Get().Dispatch();
+
+        // Update camera controller (must be after events are dispatched)
+        ZED::CameraController::Update(ZED::ECS::ECS::Registry(), deltaTime);
 
         // Drive transforms: spin all around Y
         ZED::TransformSystem::SpinAll(ZED::ECS::ECS::Registry(), deltaTime, ZED::Vec3(0.0f, 1.0f, 0.0f));
@@ -190,6 +222,12 @@ int main(int argc, char* argv[])
         auto tview = reg.view<ZED::TransformComponent>();
         for (auto e : tview)
         {
+            // Skip camera entity when rendering
+            if (reg.any_of<ZED::CameraComponent>(e))
+            {
+                continue;
+            }
+
             const auto& tr = tview.get<ZED::TransformComponent>(e);
             renderer->DrawCube(tr.ToMatrix());
         }
@@ -199,26 +237,22 @@ int main(int argc, char* argv[])
         // Tick scripts (per-entity)
         ZED::ScriptUpdateSystem::tick(ZED::ECS::ECS::Registry(), deltaTime);
 
-        // Move deferred events into the immediate queue, then dispatch all
-        ZED::EventSystem::Get().DispatchDeferred();
-        ZED::EventSystem::Get().Dispatch();
-
-        // Key test: continuous key state check
+        // Key States
         if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::W))
         {
-            std::cout << "[Continuous] W is held down\n";
+            //std::cout << "[Continuous] W is held down\n";
         }
         else if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::S))
         {
-            std::cout << "[Continuous] S is held down\n";
+            //std::cout << "[Continuous] S is held down\n";
         }
         else if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::A))
         {
-            std::cout << "[Continuous] A is held down\n";
+            //std::cout << "[Continuous] A is held down\n";
         }
         else if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::D))
         {
-            std::cout << "[Continuous] D is held down\n";
+           //std::cout << "[Continuous] D is held down\n";
         }
 
         ZED::Time::Sleep(1);
@@ -226,8 +260,10 @@ int main(int argc, char* argv[])
 
     renderer->Shutdown();
     window->Shutdown();
+    scripting->Shutdown();
     delete renderer;
     delete window;
+    delete scripting;
 
     // Cleanup loaded modules
     ZED::Module::ModuleLoader::Cleanup();

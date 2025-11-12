@@ -110,4 +110,39 @@ namespace ZED
             return (void*)glfwGetX11Window(m_Window);
         #endif
     }
+
+    void GLFWWindow::SetMouseCapture(bool capture)
+    {
+        m_mouseCaptured = capture;
+        if (m_Window)
+        {
+            if (capture)
+            {
+                glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+            }
+            else
+            {
+                glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+            }
+        }
+    }
+
+    void GLFWWindow::SetMouseVisible(bool visible)
+    {
+        m_mouseVisible = visible;
+        if (m_Window)
+        {
+            glfwSetInputMode(m_Window, GLFW_CURSOR, visible ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_HIDDEN);
+        }
+    }
+
+    bool GLFWWindow::IsMouseCaptured() const
+    {
+        return m_mouseCaptured;
+    }
+
+    bool GLFWWindow::IsMouseVisible() const
+    {
+        return m_mouseVisible;
+    }
 }

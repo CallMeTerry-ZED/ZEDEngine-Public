@@ -96,4 +96,48 @@ namespace ZED
     {
         return m_running;
     }
+
+    void SDLWindow::SetMouseCapture(bool capture)
+    {
+        m_mouseCaptured = capture;
+        if (m_Window)
+        {
+            if (capture)
+            {
+                SDL_CaptureMouse(true);
+                SDL_SetWindowRelativeMouseMode(m_Window, true);
+            }
+            else
+            {
+                SDL_SetWindowRelativeMouseMode(m_Window, false);
+                SDL_CaptureMouse(false);
+            }
+        }
+    }
+
+    void SDLWindow::SetMouseVisible(bool visible)
+    {
+        m_mouseVisible = visible;
+        if (m_Window)
+        {
+            if (visible)
+            {
+                SDL_ShowCursor();
+            }
+            else
+            {
+                SDL_HideCursor();
+            }
+        }
+    }
+
+    bool SDLWindow::IsMouseCaptured() const
+    {
+        return m_mouseCaptured;
+    }
+
+    bool SDLWindow::IsMouseVisible() const
+    {
+        return m_mouseVisible;
+    }
 }

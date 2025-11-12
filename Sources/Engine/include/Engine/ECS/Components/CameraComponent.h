@@ -30,6 +30,9 @@ namespace ZED
 
         // Which camera should be used by default
         bool primary = false;
+
+        // Editor mode toggle
+        bool editorMode = false;
     };
 }
 

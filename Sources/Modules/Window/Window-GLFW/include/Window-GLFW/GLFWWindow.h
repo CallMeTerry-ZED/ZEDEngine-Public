@@ -21,9 +21,16 @@ namespace ZED
         bool IsRunning() const override;
         void* GetNativeHandle() const override;
 
+        void SetMouseCapture(bool capture) override;
+        void SetMouseVisible(bool visible) override;
+        bool IsMouseCaptured() const override;
+        bool IsMouseVisible() const override;
+
     private:
         GLFWwindow* m_Window = nullptr;
         bool m_running = true;
+        bool m_mouseCaptured = false;
+        bool m_mouseVisible = true;
     };
 }
 

@@ -20,6 +20,7 @@
 #include "Engine/ECS/Systems/TransformSystem.h"
 #include "Engine/ECS/Components/CameraComponent.h"
 #include "Engine/ECS/Systems/CameraSystem.h"
+#include "Engine/ECS/Systems/CameraController.h"
 #include "Engine/Interfaces/Scripting/IScripting.h"
 #include "Engine/Interfaces/Renderer/IRenderer.h"
 #include "Engine/Math/Math.h"

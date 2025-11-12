@@ -17,6 +17,13 @@ namespace ZED
         virtual void Shutdown() = 0;
         virtual bool IsRunning() const = 0;
         virtual void* GetNativeHandle() const = 0;
+
+        // Mouse cursor control
+        virtual void SetMouseCapture(bool capture) = 0;  // Lock cursor to center + hide
+        virtual void SetMouseVisible(bool visible) = 0;  // Show/hide cursor
+        virtual bool IsMouseCaptured() const = 0;
+        virtual bool IsMouseVisible() const = 0;
+
         virtual ~IWindow() = default;
     };
 }

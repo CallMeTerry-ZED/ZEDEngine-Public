@@ -68,17 +68,17 @@ namespace ZED
             // Wrap an existing NSWindow*
             SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_COCOA_WINDOW_POINTER, native_handle);
         #elif defined(__linux__)
-            // If you’re using X11:
+            // If you're using X11:
             // native_handle is an ::Window (integer). Cast to uintptr_t for the NUMBER property.
             SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_X11_WINDOW_NUMBER, (Sint64)(uintptr_t)native_handle);
-            // If you’re on Wayland and have wl_surface*, use:
+            // If you're on Wayland and have wl_surface*, use:
             // SDL_SetPointerProperty(props, SDL_PROP_WINDOW_CREATE_WAYLAND_WL_SURFACE_POINTER, native_handle);
         #endif
 
         // Make sure the window is focusable so k/m input is routed here.
         SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_FOCUSABLE_BOOLEAN, true);
 
-        // Don’t let SDL implicitly create or show anything else:
+        // Don't let SDL implicitly create or show anything else:
         // (Not strictly required, but explicit is nice.)
         // SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_HIDDEN_BOOLEAN, false);
 
@@ -136,28 +136,77 @@ namespace ZED
         std::copy(state, state + numScancodes, mPrevKeyStates.begin());
 
         // --- Mouse scanning ---
-        float mouseX = 0;
-        float mouseY = 0;
-        Uint32 buttons = SDL_GetMouseState(&mouseX, &mouseY);
-        if (mouseX != mPrevMouseX || mouseY != mPrevMouseY)
+        // Check if relative mouse mode is enabled on our window
+        bool relativeMode = false;
+        if (mSDLWindow)
         {
+            relativeMode = SDL_GetWindowRelativeMouseMode(mSDLWindow);
+        }
+
+        if (relativeMode)
+        {
+            // In relative mode, use SDL_GetRelativeMouseState which reads accumulated deltas
+            float relX = 0.0f;
+            float relY = 0.0f;
+            Uint32 buttons = SDL_GetRelativeMouseState(&relX, &relY);
+
+            // DEBUG: Print to see if we're getting deltas
+            if (relX != 0.0f || relY != 0.0f)
+            {
+                std::cout << "[SDLInput] Relative mouse delta: X=" << relX << ", Y=" << relY << std::endl;
+            }
+
+            // Always post the deltas (even if 0,0) - SDL_GetRelativeMouseState resets the accumulator
             InputEvent ie{};
             ie.type   = InputEventType::MouseMove;
-            ie.mouseX = static_cast<int>(mouseX);
-            ie.mouseY = static_cast<int>(mouseY);
+            ie.mouseX = static_cast<int>(relX);
+            ie.mouseY = static_cast<int>(relY);
             if (eventCallback) eventCallback(ie);
 
             Event ev{};
             ev.type = EventType::MouseMove;
-            ev.c    = static_cast<int>(mouseX);
-            ev.d    = static_cast<int>(mouseY);
-            EventSystem::Get().PostDeferred(ev);
+            ev.c    = static_cast<int>(relX);  // Delta X
+            ev.d    = static_cast<int>(relY);  // Delta Y
 
-            mPrevMouseX = mouseX;
-            mPrevMouseY = mouseY;
+            // DEBUG: Print when posting event
+            if (relX != 0.0f || relY != 0.0f)
+            {
+                std::cout << "[SDLInput] Posting MouseMove event: c=" << ev.c << ", d=" << ev.d << std::endl;
+            }
+
+            EventSystem::Get().PostDeferred(ev);
+        }
+        else
+        {
+            // Use absolute mouse state and compute delta
+            float mouseX = 0;
+            float mouseY = 0;
+            Uint32 buttons = SDL_GetMouseState(&mouseX, &mouseY);
+            if (mouseX != mPrevMouseX || mouseY != mPrevMouseY)
+            {
+                // Compute delta from previous position
+                float deltaX = mouseX - mPrevMouseX;
+                float deltaY = mouseY - mPrevMouseY;
+
+                InputEvent ie{};
+                ie.type   = InputEventType::MouseMove;
+                ie.mouseX = static_cast<int>(mouseX);
+                ie.mouseY = static_cast<int>(mouseY);
+                if (eventCallback) eventCallback(ie);
+
+                Event ev{};
+                ev.type = EventType::MouseMove;
+                ev.c    = static_cast<int>(deltaX);  // Delta X
+                ev.d    = static_cast<int>(deltaY);  // Delta Y
+                EventSystem::Get().PostDeferred(ev);
+
+                mPrevMouseX = mouseX;
+                mPrevMouseY = mouseY;
+            }
         }
 
-        // Buttons
+        // Buttons (works for both relative and absolute mode)
+        Uint32 buttons = SDL_GetMouseState(nullptr, nullptr);
         static const struct {
             Uint32 mask; Key key; EventType downType; EventType upType;
         } buttonMap[] = {

@@ -3,6 +3,7 @@
  */
 
 #include "Script-Luau/LuauScripting.h"
+#include "Script-Luau/LuauBindings.h"
 #include <fstream>
 #include <iostream>
 
@@ -211,6 +212,9 @@ bool LuauScripting::loadIntoNewState(const ScriptDef& def, Instance& out)
     // fresh state per instance
     out.L = luaL_newstate();
     luaL_openlibs(out.L); // TODO: replace with curated libs for sandboxing
+
+    // Install ZED engine bindings
+    LuauBindings::Install(out.L);
 
     // Luau: load bytecode directly from a buffer (no reader thunk)
     if (luau_load(out.L, kChunkName, bc.data(), bc.size(), /*env*/0) != 0)

@@ -83,48 +83,33 @@ int main(int argc, char* argv[])
     // But still be able to use sdl for our input
     input->AttachToNativeWindow(window->GetNativeHandle());
 
-    // Set up input event callback
-    input->SetEventCallback([](const ZED::InputEvent& e)
-    {
-        // Input Events
-        switch (e.type)
-        {
-            case ZED::InputEventType::KeyDown:
-                //std::cout << "Key Down: " << static_cast<int>(e.key) << "\n";
-                break;
-            case ZED::InputEventType::KeyUp:
-                //std::cout << "Key Up: " << static_cast<int>(e.key) << "\n";
-                break;
-            case ZED::InputEventType::MouseMove:
-                //std::cout << "Mouse Move: (" << e.mouseX << ", " << e.mouseY << ")\n";
-                break;
-            case ZED::InputEventType::GamepadButtonDown:
-                //std::cout << "Gamepad Button Down: " << static_cast<int>(e.key) << "\n";
-                break;
-            case ZED::InputEventType::GamepadButtonUp:
-                //std::cout << "Gamepad Button Up: " << static_cast<int>(e.key) << "\n";
-                break;
-            default:
-                break;
-        }
-    });
+    // Setup ECS registry
+    auto& reg = ZED::ECS::ECS::Registry();
 
     // hook lifecycle signals once
     ZED::ScriptLifecycleSystem::connect(ZED::ECS::ECS::Registry());
 
-    // Load a compiled luau bytecode file, then attach to an entity
+    // Setup example scripts
+    ZED::ScriptId spinningScriptId{0};
+    ZED::ScriptId pulsingScriptId{0};
+    ZED::ScriptId transformScriptId{0};
+    ZED::ScriptId timeScriptId{0};
+
     if (scripting)
     {
-        auto sid = scripting->LoadBytecodeFile("Assets/Scripts/test.luau.bc");
-        auto& reg = ZED::ECS::ECS::Registry();
-        auto e = reg.create();
-        reg.emplace<ZED::ScriptComponent>(e, ZED::ScriptComponent{ sid.value, true });
+        scripting->Init();
+
+        // Load example scripts
+        spinningScriptId = scripting->LoadBytecodeFile("Assets/Scripts/spinning_cube.luau.bc");
+        pulsingScriptId = scripting->LoadBytecodeFile("Assets/Scripts/pulsing_cube.luau.bc");
+        transformScriptId = scripting->LoadBytecodeFile("Assets/Scripts/transform_example.luau.bc");
+        timeScriptId = scripting->LoadBytecodeFile("Assets/Scripts/time_example.luau.bc");
+
+        std::cout << "[Main] Loaded example scripts\n";
     }
 
     // Create camera entity with editor mode enabled
     {
-        auto& reg = ZED::ECS::ECS::Registry();
-
         auto camEnt = reg.create();
         ZED::TransformComponent camTr{};
         camTr.position = ZED::Vec3(0.0f, 0.0f, -6.0f);
@@ -135,32 +120,64 @@ int main(int argc, char* argv[])
         camComp.editorMode = true;  // Enable editor mode camera control
         camComp.aspect = static_cast<float>(800) / static_cast<float>(600);
         reg.emplace<ZED::CameraComponent>(camEnt, camComp);
+
+        // Attach camera_example script to camera entity
+        if (scripting && timeScriptId.value != 0)
+        {
+            // Using time_example for camera to show time info
+            reg.emplace<ZED::ScriptComponent>(camEnt, ZED::ScriptComponent{ timeScriptId.value, true });
+        }
     }
 
-    // Transform Test: create a few entities with transforms
+    // Transform Test: create entities with different scripts attached
     {
-        auto& reg = ZED::ECS::ECS::Registry();
-
+        // Entity 1: Spinning cube
         auto e1 = reg.create();
         reg.emplace<ZED::TransformComponent>(e1, ZED::TransformComponent{
-            .position = ZED::Vec3(-2.0f, 0.0f, 0.0f),
+            .position = ZED::Vec3(-4.0f, 0.0f, 0.0f),
             .rotation = ZED::Vec3(0.0f, 0.0f, 0.0f),
             .scale    = ZED::Vec3(1.0f, 1.0f, 1.0f)
         });
+        if (scripting && spinningScriptId.value != 0)
+        {
+            reg.emplace<ZED::ScriptComponent>(e1, ZED::ScriptComponent{ spinningScriptId.value, true });
+        }
 
+        // Entity 2: Pulsing cube
         auto e2 = reg.create();
         reg.emplace<ZED::TransformComponent>(e2, ZED::TransformComponent{
             .position = ZED::Vec3( 0.0f, 0.0f, 0.0f),
             .rotation = ZED::Vec3(0.0f, 0.0f, 0.0f),
             .scale    = ZED::Vec3(1.0f, 1.0f, 1.0f)
         });
+        if (scripting && pulsingScriptId.value != 0)
+        {
+            reg.emplace<ZED::ScriptComponent>(e2, ZED::ScriptComponent{ pulsingScriptId.value, true });
+        }
 
+        // Entity 3: Transform example (rotates on all axes)
         auto e3 = reg.create();
         reg.emplace<ZED::TransformComponent>(e3, ZED::TransformComponent{
-            .position = ZED::Vec3( 2.0f, 0.0f, 0.0f),
+            .position = ZED::Vec3( 4.0f, 0.0f, 0.0f),
             .rotation = ZED::Vec3(0.0f, 0.0f, 0.0f),
             .scale    = ZED::Vec3(1.0f, 1.0f, 1.0f)
         });
+        if (scripting && transformScriptId.value != 0)
+        {
+            reg.emplace<ZED::ScriptComponent>(e3, ZED::ScriptComponent{ transformScriptId.value, true });
+        }
+
+        // Entity 4: Another spinning cube (different speed could be set in script)
+        auto e4 = reg.create();
+        reg.emplace<ZED::TransformComponent>(e4, ZED::TransformComponent{
+            .position = ZED::Vec3( 8.0f, 0.0f, 0.0f),
+            .rotation = ZED::Vec3(0.0f, 0.0f, 0.0f),
+            .scale    = ZED::Vec3(1.0f, 1.0f, 1.0f)
+        });
+        if (scripting && spinningScriptId.value != 0)
+        {
+            reg.emplace<ZED::ScriptComponent>(e4, ZED::ScriptComponent{ spinningScriptId.value, true });
+        }
     }
 
     // Initialize camera system
@@ -207,9 +224,6 @@ int main(int argc, char* argv[])
         // Update camera controller (must be after events are dispatched)
         ZED::CameraController::Update(ZED::ECS::ECS::Registry(), deltaTime);
 
-        // Drive transforms: spin all around Y
-        ZED::TransformSystem::SpinAll(ZED::ECS::ECS::Registry(), deltaTime, ZED::Vec3(0.0f, 1.0f, 0.0f));
-
         // Camera update
         ZED::CameraSystem::Update(ZED::ECS::ECS::Registry());
         const ZED::Mat4& view = ZED::CameraSystem::GetView();
@@ -218,7 +232,6 @@ int main(int argc, char* argv[])
         // Render all transforms as cubes
         renderer->BeginFrame(0.06f, 0.06f, 0.08f, 1.0f, view, proj);
 
-        auto& reg = ZED::ECS::ECS::Registry();
         auto tview = reg.view<ZED::TransformComponent>();
         for (auto e : tview)
         {
@@ -234,33 +247,18 @@ int main(int argc, char* argv[])
 
         renderer->EndFrame();
 
-        // Tick scripts (per-entity)
+        // Tick scripts (per-entity) - scripts handle all transform updates
         ZED::ScriptUpdateSystem::tick(ZED::ECS::ECS::Registry(), deltaTime);
-
-        // Key States
-        if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::W))
-        {
-            //std::cout << "[Continuous] W is held down\n";
-        }
-        else if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::S))
-        {
-            //std::cout << "[Continuous] S is held down\n";
-        }
-        else if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::A))
-        {
-            //std::cout << "[Continuous] A is held down\n";
-        }
-        else if (ZED::Input::GetInput()->IsKeyDown(ZED::Key::D))
-        {
-           //std::cout << "[Continuous] D is held down\n";
-        }
 
         ZED::Time::Sleep(1);
     }
 
     renderer->Shutdown();
     window->Shutdown();
-    scripting->Shutdown();
+    if (scripting)
+    {
+        scripting->Shutdown();
+    }
     delete renderer;
     delete window;
     delete scripting;

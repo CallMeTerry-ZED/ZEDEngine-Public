@@ -105,7 +105,8 @@ namespace ZED
 		{
 			// Apply accumulated mouse delta
 			tr->rotation.y += s_mouseDeltaX * s_mouseSensitivity; // Yaw
-			tr->rotation.x -= s_mouseDeltaY * s_mouseSensitivity; // Pitch (inverted)
+		    tr->rotation.x += s_mouseDeltaY * s_mouseSensitivity; // Pitch
+			//tr->rotation.x -= s_mouseDeltaY * s_mouseSensitivity; // Pitch (inverted)
 
 			// Clamp pitch to avoid gimbal lock
 			const float maxPitch = 89.0f * 3.14159265f / 180.0f;

@@ -11,14 +11,9 @@
 
 namespace ZED
 {
-    // Central registry inside the engine
     struct ECS
     {
-        static entt::registry& Registry()
-        {
-            static entt::registry r;
-            return r;
-        }
+        ZEDENGINE_API static entt::registry& Registry();
     };
 }
 

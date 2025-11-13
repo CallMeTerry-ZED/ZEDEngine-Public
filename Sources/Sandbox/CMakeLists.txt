@@ -123,15 +123,38 @@ endif()
 
 # ---------- Stage everything for Sandbox (runs when building Sandbox) ----------
 
+# Helper script to copy Assets excluding .luau files
+set(COPY_ASSETS_SCRIPT "${CMAKE_BINARY_DIR}/cmake/CopyAssetsExcludeLuau.cmake")
+file(WRITE "${COPY_ASSETS_SCRIPT}" "
+if(NOT DEFINED SRC_DIR OR NOT DEFINED DST_DIR)
+  message(FATAL_ERROR \"CopyAssetsExcludeLuau.cmake requires SRC_DIR, DST_DIR\")
+endif()
+file(GLOB_RECURSE ALL_FILES \"\${SRC_DIR}/*\")
+foreach(FILE \${ALL_FILES})
+  get_filename_component(FILE_NAME \"\${FILE}\" NAME)
+  get_filename_component(FILE_EXT \"\${FILE}\" EXT)
+  # Skip .luau files
+  if(NOT FILE_EXT STREQUAL \".luau\")
+    file(RELATIVE_PATH REL_PATH \"\${SRC_DIR}\" \"\${FILE}\")
+    get_filename_component(REL_DIR \"\${REL_PATH}\" DIRECTORY)
+    if(REL_DIR)
+      file(MAKE_DIRECTORY \"\${DST_DIR}/\${REL_DIR}\")
+    endif()
+    file(COPY \"\${FILE}\" DESTINATION \"\${DST_DIR}/\${REL_DIR}\")
+  endif()
+endforeach()
+")
+
 add_custom_target(StageSandbox
         # Ensure the output dir exists
         COMMAND ${CMAKE_COMMAND} -E make_directory
         "$<TARGET_FILE_DIR:Sandbox>"
 
-        # 1) Copy Assets/
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "${CMAKE_SOURCE_DIR}/Assets"
-        "$<TARGET_FILE_DIR:Sandbox>/Assets"
+        # 1) Copy Assets/ excluding .luau files
+        COMMAND ${CMAKE_COMMAND}
+        -DSRC_DIR="${CMAKE_SOURCE_DIR}/Assets"
+        -DDST_DIR="$<TARGET_FILE_DIR:Sandbox>/Assets"
+        -P "${COPY_ASSETS_SCRIPT}"
 
         # 2) Overlay compiled .bc files
         COMMAND ${CMAKE_COMMAND} -E copy_directory
